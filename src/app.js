@@ -73,7 +73,7 @@ function nav(e) {
     }
     )),
     n += "</div></li>",
-    n += `<li class="nav-item">\n    <a class="nav-link" href="${UI.contact_link}" target="_blank">${UI.nav_link_4}</a>\n  </li>${UI.show_logout_button ? '<li class="nav-item"><a class="nav-link" href="/logout">Sair</a></li>' : ""}`;
+    n += `<li class="nav-item">\n </li>${UI.show_logout_button ? '<li class="nav-item"><a class="nav-link" href="/logout">Sair</a></li>' : ""}`;
     var l = `\n</ul>\n<form class="d-flex" method="get" action="/${a}:search">\n<input class="form-control me-2" name="q" type="search" aria-label="Buscar"  placeholder="Digite..." value="${t.is_search_page && t.q || ""}" required>\n<button class="btn ${UI.search_button_class}" onclick="if($('#search_bar_form>input').val()) $('#search_bar_form').submit();" type="submit">Buscar</button>\n</form>\n</div>\n</div>\n</nav>\n`;
     t.root_type < 2 && (n += l),
     $("#nav").html(n)
