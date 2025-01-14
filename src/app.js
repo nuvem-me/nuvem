@@ -379,7 +379,7 @@ function append_files_to_list(e, t) {
     a && (total_size = formatFileSize(r) || "0 Bytes",
     total_items = n.find(".countitems").length,
     total_files = n.find(".size_items").length,
-    0 == total_items ? $("#count").removeClass("d-none").find(".number").text("Pasta vazia.") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " items"),
+    0 == total_items ? $("#count").removeClass("d-none").find(".number").text("Pasta vazia.") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " itens"),
     0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero Files") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com o tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
 }
 function render_search_result_list() {
