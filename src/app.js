@@ -806,7 +806,7 @@ function copyFunction() {
     ))
 }
 function outFunc() {
-    document.getElementById("myTooltip").innerHTML = "Copy"
+    document.getElementById("myTooltip").innerHTML = "Copiar"
 }
 function updateCheckboxes() {
     const e = document.querySelectorAll('input[type="checkbox"]')
