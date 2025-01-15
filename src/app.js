@@ -107,13 +107,27 @@ function requestListPath(e, t, n, a, i=3, o=!1) {
         }).then((function(e) {
             if (!e.ok)
                 throw new Error("Request failed");
-            return e.json()
+            return e.text(); // Change to text to log the response
         }
-        )).then((function(t) {
-            t && t.error && 401 === t.error.code ? askPassword(e) : t && null === t.data ? (document.getElementById("spinner").remove(),
-            document.getElementById("list").innerHTML = "<div class='alert alert-danger' role='alert'> Server didn't send any data.</div></div></div>",
-            $("#update").hide()) : t && t.data && (n(t, e, l),
-            $("#update").hide())
+        )).then((function(responseText) {
+            console.log("Response Text:", responseText); // Log the response text
+            try {
+                const jsonResponse = JSON.parse(responseText);
+                if (jsonResponse && jsonResponse.error && jsonResponse.error.code === 401) {
+                    askPassword(e);
+                } else if (jsonResponse && jsonResponse.data === null) {
+                    document.getElementById("spinner").remove();
+                    document.getElementById("list").innerHTML = "<div class='alert alert-danger' role='alert'> Server didn't send any data.</div></div></div>";
+                    $("#update").hide();
+                } else if (jsonResponse && jsonResponse.data) {
+                    n(jsonResponse, e, l);
+                    $("#update").hide();
+                }
+            } catch (error) {
+                console.error("Error parsing JSON:", error);
+                document.getElementById("update").innerHTML = "<div class='alert alert-danger' role='alert'> Unable to parse JSON response.</div></div></div>";
+                $("#update").hide();
+            }
         }
         )).catch((function(e) {
             i > 0 ? (sleep(2e3),
@@ -634,7 +648,7 @@ function file_code(e, t, n, a, i, o, l, r) {
         "" == g && (g = "Home"),
         c += '<a href="' + p + '" class="breadcrumb-item">' + g + "</a>"
     }
-    var f = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${c}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n        </div>\n        <div id="code_spinner"></div>` + (UI.second_domain_for_dl ? "" : '<pre class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>') + `<div class="card-body">\n          <div class="input-group mb-4">\n            <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + d + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>";
+    var f = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${c}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n        </div>\n        <div id="code_spinner"></div>` + (UI.second_domain_for_dl ? "" : '<pre class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>') + `<div class="card-body">\n          <div class="input-group mb-4">\n            <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + d + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>`;
     $("#content").html(f);
     $("#code_spinner").html('<div class="d-flex justify-content-center"><div class="spinner-border m-5" role="status"><span class="sr-only"></span></div></div>'),
     a <= 2097152 ? $.get(i, (function(e) {
