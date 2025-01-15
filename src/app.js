@@ -163,7 +163,7 @@ function requestSearch(e, t, n=3) {
 }
 function list(e, t="", n=!1) {
     console.log(t);
-    var a = `<div class="container">${UI.fixed_header ? "<br>" : ""}\n    <div id="update"></div>\n    <div id="head_md" style="display:none; padding: 20px 20px;"></div>\n    <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n      <div class="d-flex align-items-center justify-content-between">\n        <div class="form-check mr-3">\n          <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n          <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n        </div>\n        <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Copiar</button>\n      </div>\n    </div>\n    <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0; padding-bottom: 0rem;">\n      <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">\n        <ol class="breadcrumb" id="folderne">\n          <li class="breadcrumb-item"><a href="/">Início</a></li>`
+    var a = `<div class="container">${UI.fixed_header ? "<br>" : ""}\n    <div id="update"></div>\n    <div id="head_md" style="display:none; padding: 20px 20px;"></div>\n    <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n      <div class="d-flex align-items-center justify-content-between">\n        <div class="form-check mr-3">\n          <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n          <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n        </div>\n        <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n      </div>\n    </div>\n    <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0; padding-bottom: 0rem;">\n      <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">\n        <ol class="breadcrumb" id="folderne">\n          <li class="breadcrumb-item"><a href="/">Início</a></li>`
       , i = window.location.pathname.trim("/").split("/")
       , o = "/";
     if (i.length > 1)
@@ -245,8 +245,6 @@ function list(e, t="", n=!1) {
             a.click();
             document.body.removeChild(a);
         });
-    
-        alert("Os downloads foram iniciados.");
     }));
 }
 function askPassword(e) {
@@ -386,7 +384,7 @@ function append_files_to_list(e, t) {
     0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero Files") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com o tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
 }
 function render_search_result_list() {
-    var e = `\n  <div class="container"><br>\n  <div id="update"></div>\n  <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n  <div class="d-flex align-items-center justify-content-between">\n    <div class="form-check mr-3">\n      <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n      <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n    </div>\n    <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Copiar</button>\n  </div>\n  </div>\n  <div class="card">\n  <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0;">Search Results</div>\n  <div id="list" class="list-group text-break">\n  </div>\n  </div>\n  <div class="${UI.file_count_alert_class} text-center d-none" role="alert" id="count"><span class="number text-center"></span> | <span class="totalsize text-center"></span></div>\n  <div id="readme_md" style="display:none; padding: 20px 20px;"></div>\n  </div>\n  `;
+    var e = `\n  <div class="container"><br>\n  <div id="update"></div>\n  <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n  <div class="d-flex align-items-center justify-content-between">\n    <div class="form-check mr-3">\n      <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n      <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n    </div>\n    <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n  </div>\n  </div>\n  <div class="card">\n  <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0;">Search Results</div>\n  <div id="list" class="list-group text-break">\n  </div>\n  </div>\n  <div class="${UI.file_count_alert_class} text-center d-none" role="alert" id="count"><span class="number text-center"></span> | <span class="totalsize text-center"></span></div>\n  <div id="readme_md" style="display:none; padding: 20px 20px;"></div>\n  </div>\n  `;
     $("#content").html(e),
     $("#list").html(`<div class="d-flex justify-content-center"><div class="spinner-border ${UI.loading_spinner_class} m-5" role="status" id="spinner"><span class="sr-only"></span></div></div>`),
     $("#readme_md").hide().html(""),
@@ -421,26 +419,27 @@ function render_search_result_list() {
         !0 === window.scroll_status.loading_lock && (window.scroll_status.loading_lock = !1)
     }
     ));
-    document.getElementById("handle-multiple-items-copy").addEventListener("click", (()=>{
+    document.getElementById("handle-multiple-items-copy").addEventListener("click", (() => {
         const e = document.querySelectorAll('input[type="checkbox"]:checked')
           , t = [];
         if (0 === e.length)
             return void alert("Nenhum item selecionado.");
-        e.forEach((e=>{
+        
+        e.forEach((e => {
             const n = e.value;
-            t.push(n)
-        }
-        ));
-        const n = t.join("\n")
-          , a = document.createElement("textarea");
-        a.value = n,
-        document.body.appendChild(a),
-        a.select(),
-        document.execCommand("copy"),
-        document.body.removeChild(a),
-        alert("Os items selecionados foram copiados.")
-    }
-    ))
+            t.push(n);
+        }));
+    
+        t.forEach((link) => {
+            const a = document.createElement("a");
+            a.href = link;
+            a.download = "";
+            a.target = "_blank";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }));
 }
 function append_search_result_to_list(e) {
     try {
