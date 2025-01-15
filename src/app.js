@@ -226,25 +226,27 @@ function list(e, t="", n=!1) {
         password: c
     }, p, null));
     document.getElementById("handle-multiple-items-copy").addEventListener("click", (() => {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked'),
-              links = [];
-        if (checkboxes.length === 0) {
-            alert("Nenhum item foi selecionado");
-            return;
-        }
-        checkboxes.forEach((cb) => {
-            links.push(cb.value);
-        });
-        links.forEach((link) => {
-            const a = document.createElement('a');
+        const e = document.querySelectorAll('input[type="checkbox"]:checked')
+          , t = [];
+        if (0 === e.length)
+            return void alert("Nenhum item foi selecionado");
+        
+        e.forEach((e => {
+            const n = e.value;
+            t.push(n);
+        }));
+    
+        t.forEach((link) => {
+            const a = document.createElement("a");
             a.href = link;
-            a.download = '';
-            a.style.display = 'none';
+            a.download = "";
+            a.target = "_blank";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         });
-        alert("Os itens foram baixados.");
+    
+        alert("Os downloads foram iniciados.");
     }));
 }
 function askPassword(e) {
@@ -419,27 +421,26 @@ function render_search_result_list() {
         !0 === window.scroll_status.loading_lock && (window.scroll_status.loading_lock = !1)
     }
     ));
-    document.getElementById("handle-multiple-items-copy").addEventListener("click", (() => {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked'),
-              links = [];
-        if (checkboxes.length === 0) {
-            alert("Nenhum item foi selecionado");
-            return;
+    document.getElementById("handle-multiple-items-copy").addEventListener("click", (()=>{
+        const e = document.querySelectorAll('input[type="checkbox"]:checked')
+          , t = [];
+        if (0 === e.length)
+            return void alert("Nenhum item selecionado.");
+        e.forEach((e=>{
+            const n = e.value;
+            t.push(n)
         }
-        checkboxes.forEach((cb) => {
-            links.push(cb.value);
-        });
-        links.forEach((link) => {
-            const a = document.createElement('a');
-            a.href = link;
-            a.download = '';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        });
-        alert("Os itens foram baixados.");
-    }));
+        ));
+        const n = t.join("\n")
+          , a = document.createElement("textarea");
+        a.value = n,
+        document.body.appendChild(a),
+        a.select(),
+        document.execCommand("copy"),
+        document.body.removeChild(a),
+        alert("Os items selecionados foram copiados.")
+    }
+    ))
 }
 function append_search_result_to_list(e) {
     try {
@@ -644,7 +645,7 @@ function file_code(e, t, n, a, i, o, l, r) {
         "" == g && (g = "Home"),
         c += '<a href="' + p + '" class="breadcrumb-item">' + g + "</a>"
     }
-    var f = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${c}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n        </div>\n        <div id="code_spinner"></div>` + (UI.second_domain_for_dl ? "" : '<pre class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>') + `<div class="card-body">\n          <div class="input-group mb-4">\n            <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + d + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>`;
+    var f = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${c}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n        </div>\n        <div id="code_spinner"></div>` + (UI.second_domain_for_dl ? "" : '<pre class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>') + `<div class="card-body">\n          <div class="input-group mb-4">\n            <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + d + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>";
     $("#content").html(f);
     $("#code_spinner").html('<div class="d-flex justify-content-center"><div class="spinner-border m-5" role="status"><span class="sr-only"></span></div></div>'),
     a <= 2097152 ? $.get(i, (function(e) {
@@ -764,7 +765,7 @@ function file_pdf(e, t, n, a, i, o) {
         "" == c && (c = "Home"),
         r += '<a href="' + s + '" class="breadcrumb-item">' + c + "</a>"
     }
-    var p = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${r}\n        </ol>\n      </nav>\n    <div class="card">\n    <div class="card-body text-center">\n    <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n    <div>\n    </div><br>\n    <iframe src="https://docs.google.com/gview?url=${encodeURIComponent(a)}&embedded=true" style="width:100%; height:500px;" frameborder="0"></iframe>\n    </div>\n    <div class="card-body">\n    <div class="input-group mb-4">\n    <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n    </div>\n    <div class="card-text text-center">\n    <div class="btn-group text-center">\n        <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n        <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n            <span class="sr-only"></span>\n        </button>\n        <div class="dropdown-menu">\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n        </div>\n    </div>\n    ` + copyButton + "\n    </div>\n    <br>\n\n    </div>\n    </div>\n    </div>\n  `;
+    var p = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${r}\n        </ol>\n      </nav>\n    <div class="card">\n    <div class="card-body text-center">\n    <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n    <div>\n    </div><br>\n    <iframe src="https://docs.google.com/gview?url=${encodeURIComponent(a)}&embedded=true" style="width:100%; height:500px;" frameborder="0"></iframe>\n    </div>\n    <div class="card-body">\n    <div class="input-group mb-4">\n    <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n    </div>\n    <div class="card-text text-center">\n    <div class="btn-group text-center">\n        <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n        <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n            <span class="sr-only"></span>\n        </button>\n        <div class="dropdown-menu">\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n            <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n        </div>\n    </div>\n    ` + copyButton + "\n    </div>\n    <br>\n\n    </div>\n    </div>\n    </div>\n  ";
     $("#content").html(p)
 }
 function file_image(e, t, n, a, i, o) {
@@ -777,7 +778,7 @@ function file_image(e, t, n, a, i, o) {
         "" == p && (p = "Home"),
         s += '<a href="' + d + '" class="breadcrumb-item">' + p + "</a>"
     }
-    var m = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n      <div class="card">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          <img src="${a}" id="load_image" width="100%">\n        </div>\n        <div class="card-body">\n          <div class="input-group mb-4">\n            <div class="input-group-prepend">\n              <span class="input-group-text" id="">Full URL</span>\n            </div>\n            <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + r + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>\n  `;
+    var m = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n      <div class="card">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          <img src="${a}" id="load_image" width="100%">\n        </div>\n        <div class="card-body">\n          <div class="input-group mb-4">\n            <div class="input-group-prepend">\n              <span class="input-group-text" id="">Full URL</span>\n            </div>\n            <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + r + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>\n  ";
     $("#content").html(m)
 }
 function utc2delhi(e) {
