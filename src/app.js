@@ -650,18 +650,17 @@ function file_code(name, encodedName, size, downloadUrl, id, rootId) {
     var ext = name.split('.').pop().toLowerCase();
     var url = UI.second_domain_for_dl ? UI.downloaddomain + downloadUrl : window.location.origin + downloadUrl;
     
-    $.post("", function(data) {
+    $.get(downloadUrl, function(data) {
         try {
-            var obj = jQuery.parseJSON(gdidecode(read(data)));
-            var size = formatFileSize(obj.size);
+            var size = formatFileSize(size);
             var content = `
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism-twilight.css" integrity="sha256-Rl83wx+fN2p2ioYpdvpWxuhAbxj+/7IwaZrKQBu/KQE=" crossorigin="anonymous">
 <div class="container"><br>
 <div class="card text-center">
 <div class="card-body text-center">
-  <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${obj.name}<br>${size}</div>
+  <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${name}<br>${size}</div>
 <div>
-<pre ${UI.second_domain_for_dl ? 'style="display:none;"': 'style="display:block;"'} class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>
+<pre class="line-numbers language-${type[ext] || 'Text'}" style="white-space: pre-wrap;"><code id="editor">${$('<div/>').text(data).html()}</code></pre>
 </div>
 </div>
 <div class="card-body">
@@ -672,7 +671,7 @@ function file_code(name, encodedName, size, downloadUrl, id, rootId) {
   <input type="text" class="form-control" id="dlurl" value="${url}">
 </div>
   <div class="card-text text-center">
-  ${UI.display_drive_link ? '<a type="button" class="btn btn-info" href="https://drive.google.com/file/d/'+ obj.id +'/view" id ="file_drive_link" target="_blank">GD Link</a>': ''}
+  ${UI.display_drive_link ? '<a type="button" class="btn btn-info" href="https://drive.google.com/file/d/'+ id +'/view" id ="file_drive_link" target="_blank">GD Link</a>': ''}
   <div class="btn-group text-center">
       <a href="${url}" type="button" class="btn btn-primary">Download</a>
       <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -703,14 +702,21 @@ function file_code(name, encodedName, size, downloadUrl, id, rootId) {
 </div>`
         }
         $('#content').html(content);
-    });
-
-    $.get(downloadUrl, function(data) {
-        $('#editor').html($('<div/><div/><div/>').text(data).html());
-        var code_type = "Text";
-        if (type[ext] != undefined) {
-            code_type = type[ext];
-        }
+    }).fail(function() {
+        var content = `
+<div class="container"><br>
+<div class="card text-center">
+    <div class="card-body text-center">
+      <div class="${UI.file_view_alert_class}" id="file_details" role="alert"><b>404.</b> That’s an error.</div>
+    </div><p>The requested URL was not found on this server. That’s all we know.</p>
+      <div class="card-text text-center">
+      <div class="btn-group text-center">
+        <a href="/" type="button" class="btn btn-primary">Homepage</a>
+      </div>
+        </div><br>
+</div>
+</div>`;
+        $('#content').html(content);
     });
 }
 function file_video(e, t, n, a, i, o, l, r) {
@@ -797,7 +803,7 @@ function file_audio(e, t, n, a, i, o) {
         "" == m && (m = "Home"),
         d += '<a href="' + c + '" class="breadcrumb-item">' + m + "</a>"
     }
-    var g = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${d}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          ${UI.disable_player ? "" : `\n          <video id="aplayer" poster="${UI.audioposter}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">\n            <source src="${a}" type="audio/mpeg" />\n            <source src="${a}" type="audio/ogg" />\n            <source src="${a}" type="audio/wav" />\n          </video>`}\n        </div>\n        </br>\n        ${UI.disable_audio_download ? "" : `\n          <div class="card-body">\n          <div class="input-group mb-4">\n          <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n              <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n              <a class="dropdown-item" href="iina://weblink?url=${a}">IINA</a>\n              <a class="dropdown-item" href="potplayer://${a}">PotPlayer</a>\n              <a class="dropdown-item" href="vlc://${a}">VLC Mobile</a>\n              <a class="dropdown-item" href="${a}">VLC Desktop</a>\n              <a class="dropdown-item" href="nplayer-${a}">nPlayer</a>\n              <a class="dropdown-item" href="intent://${a}#Intent;type=audio/any;package=is.xyz.mpv;scheme=https;end;">mpv-android</a>\n              <a class="dropdown-item" href="mpv://${l}">mpv x64</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end">MX Player (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end">MX Player (Pro)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n          </div>\n          ` + copyButton + s + "\n          <br>\n          </div>\n          </div>\n          "}\n      </div>\n    </div>\n  `;
+    var g = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${d}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          ${UI.disable_player ? "" : `\n          <video id="aplayer" poster="${UI.audioposter}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">\n            <source src="${a}" type="audio/mpeg" />\n            <source src="${a}" type="audio/ogg" />\n            <source src="${a}" type="audio/wav" />\n          </video>`}\n        </div>\n        </br>\n        ${UI.disable_audio_download ? "" : `\n          <div class="card-body">\n          <div class="input-group mb-4">\n          <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n              <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n              <a class="dropdown-item" href="iina://weblink?url=${a}">IINA</a>\n              <a class="dropdown-item" href="potplayer://${a}">PotPlayer</a>\n              <a class="dropdown-item" href="vlc://${a}">VLC Mobile</a>\n              <a class="dropdown-item" href="${a}">VLC Desktop</a>\n              <a class="dropdown-item" href="nplayer-${a}">nPlayer</a>\n              <a class="dropdown-item" href="intent://${a}#Intent;type=audio/any;package=is.xyz.mpv;scheme=https;end;">mpv-android</a>\n              <a class="dropdown-item" href="mpv://${l}">mpv x64</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end">MX Player (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end">MX Player (Pro)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n              <a class="dropdown-item" href="intent://${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n          </div>\n          ` + copyButton + s + "\n          <br>\n          </div>\n          </div>\n          "}\n      </div>\n    </div>\n  `;
     $("#content").html(g);
     var f = document.createElement("script");
     f.src = "https://vjs.zencdn.net/" + UI.videojs_version + "/video.min.js",
