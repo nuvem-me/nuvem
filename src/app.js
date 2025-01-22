@@ -634,25 +634,84 @@ function file_others(e, t, n, a, i, o) {
     var m = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n            <div class="card text-center">\n            <div class="card-body text-center">\n              <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n            </div>\n            <div class="card-body">\n            <div class="input-group mb-4">\n              <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n            </div>\n            <div class="card-text text-center">\n            <div class="btn-group text-center">\n                <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                  <span class="sr-only"></span>\n                </button>\n                <div class="dropdown-menu">\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n                </div>\n            </div>\n            ` + copyButton + r + "\n            </div>\n            <br></div>";
     $("#content").html(m)
 }
-function file_code(e, t, n, a, i, o, l, r) {
-    var s = window.location.pathname.split("/");
-    const d = UI.allow_file_copy ? generateCopyFileBox(l, r) : "";
-    for (var c = "", p = "", m = 0; m < s.length; m++) {
-        var g = s[m];
-        m == s.length - 1 ? p += g + "?a=view" : p += g + "/",
-        g.length > 15 && (g = (g = decodeURIComponent(g)).substring(0, 10) + "..."),
-        "" == g && (g = "Home"),
-        c += '<a href="' + p + '" class="breadcrumb-item">' + g + "</a>"
-    }
-    var f = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${c}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n        </div>\n        <div id="code_spinner"></div>` + (UI.second_domain_for_dl ? "" : '<pre class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>') + `<div class="card-body">\n          <div class="input-group mb-4">\n            <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + d + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>";
-    $("#content").html(f);
-    $("#code_spinner").html('<div class="d-flex justify-content-center"><div class="spinner-border m-5" role="status"><span class="sr-only"></span></div></div>'),
-    a <= 2097152 ? $.get(i, (function(e) {
-        $("#editor").html($("<div/>").text(e).html()),
-        $("#code_spinner").html("")
-    }
-    )) : ($("#code_spinner").html(""),
-    $("#editor").html(`<div class="${UI.file_view_alert_class}" id="file_details" role="alert">O tamanho do arquivo é muito grande para visualização, o limite máximo é de 2 MB. Baixe o arquivo para visualiza-lo.</div>`))
+function file_code(name, encodedName, size, downloadUrl, id, rootId) {
+    var type = {
+        "html": "html",
+        "php": "php",
+        "css": "css",
+        "go": "golang",
+        "java": "java",
+        "js": "javascript",
+        "json": "json",
+        "txt": "Text",
+        "sh": "sh",
+        "md": "Markdown",
+    };
+    var ext = name.split('.').pop().toLowerCase();
+    var url = UI.second_domain_for_dl ? UI.downloaddomain + downloadUrl : window.location.origin + downloadUrl;
+    
+    $.post("", function(data) {
+        try {
+            var obj = jQuery.parseJSON(gdidecode(read(data)));
+            var size = formatFileSize(obj.size);
+            var content = `
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism-twilight.css" integrity="sha256-Rl83wx+fN2p2ioYpdvpWxuhAbxj+/7IwaZrKQBu/KQE=" crossorigin="anonymous">
+<div class="container"><br>
+<div class="card text-center">
+<div class="card-body text-center">
+  <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${obj.name}<br>${size}</div>
+<div>
+<pre ${UI.second_domain_for_dl ? 'style="display:none;"': 'style="display:block;"'} class="line-numbers language-markup" data-src="plugins/line-numbers/index.html" data-start="-5" style="white-space: pre-wrap; counter-reset: linenumber -6;" data-src-status="loaded" tabindex="0"><code id="editor"></code></pre>
+</div>
+</div>
+<div class="card-body">
+<div class="input-group mb-4">
+  <div class="input-group-prepend">
+    <span class="input-group-text" id="">Full URL</span>
+  </div>
+  <input type="text" class="form-control" id="dlurl" value="${url}">
+</div>
+  <div class="card-text text-center">
+  ${UI.display_drive_link ? '<a type="button" class="btn btn-info" href="https://drive.google.com/file/d/'+ obj.id +'/view" id ="file_drive_link" target="_blank">GD Link</a>': ''}
+  <div class="btn-group text-center">
+      <a href="${url}" type="button" class="btn btn-primary">Download</a>
+      <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="sr-only"></span>
+      </button>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM (Free)</a>
+        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM (Lite)</a>
+        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM+ (Plus)</a>
+      </div>
+  </div>
+  <button onclick="copyFunction()" onmouseout="outFunc()" class="btn btn-success"> <span class="tooltiptext" id="myTooltip">Copy</span> </button></div><br></div>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.js" integrity="sha256-fZOd7N/oofoKcO92RzxvC0wMm+EvsKyRT4nmcmQbgzU=" crossorigin="anonymous"></script>
+`;
+        } catch (err) {
+            var content = `
+<div class="container"><br>
+<div class="card text-center">
+    <div class="card-body text-center">
+      <div class="${UI.file_view_alert_class}" id="file_details" role="alert"><b>404.</b> That’s an error.</div>
+    </div><p>The requested URL was not found on this server. That’s all we know.</p>
+      <div class="card-text text-center">
+      <div class="btn-group text-center">
+        <a href="/" type="button" class="btn btn-primary">Homepage</a>
+      </div>
+        </div><br>
+</div>
+</div>`
+        }
+        $('#content').html(content);
+    });
+
+    $.get(downloadUrl, function(data) {
+        $('#editor').html($('<div/><div/><div/>').text(data).html());
+        var code_type = "Text";
+        if (type[ext] != undefined) {
+            code_type = type[ext];
+        }
+    });
 }
 function file_video(e, t, n, a, i, o, l, r) {
     var s = btoa(i)
