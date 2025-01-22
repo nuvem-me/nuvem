@@ -763,7 +763,9 @@ function file_pdf(path) {
     $.post("",
         function(data) {
             try {
+                console.log("Resposta da API:", data);
                 var obj = jQuery.parseJSON(gdidecode(read(data)));
+                console.log("JSON Decodificado:", obj);
                 var size = formatFileSize(obj.size);
                 var content = `
   <script>
@@ -865,6 +867,7 @@ function file_pdf(path) {
   </div>
   `;
             } catch (err) {
+                console.error("Erro ao processar os dados:", err);
                 var content = `
 <div class="container"><br>
 <div class="card text-center">
