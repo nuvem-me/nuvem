@@ -58,7 +58,7 @@ function title(e) {
       , n = window.drive_names[t];
     e = e.replace(`/${t}:`, "");
     var a = window.MODEL;
-    a.is_search_page ? $("title").html(`${n} - Search results for ${a.q} `) : $("title").html(`${n} - ${e}`)
+    a.is_search_page ? $("title").html(`${n} - Resultados da Busca for ${a.q} `) : $("title").html(`${n} - ${e}`)
 }
 function nav(e) {
     var t = window.MODEL
@@ -74,7 +74,20 @@ function nav(e) {
     )),
     n += "</div></li>",
     n += `<li class="nav-item">\n </li>${UI.show_logout_button ? '<li class="nav-item"><a class="nav-link" href="/logout">Sair</a></li>' : ""}`;
-    var l = `\n</ul>\n<form class="d-flex" method="get" action="/${a}:search">\n<input class="form-control me-2" name="q" type="search" aria-label="Buscar"  placeholder="Digite..." value="${t.is_search_page && t.q || ""}" required>\n<button class="btn ${UI.search_button_class}" onclick="if($('#search_bar_form>input').val()) $('#search_bar_form').submit();" type="submit">Buscar</button>\n</form>\n</div>\n</div>\n</nav>\n`;
+    // Get user info from global variables
+    var userName = window.userInfo ? window.userInfo.name : null;
+    var userMembersince = window.userInfo ? window.userInfo.membersince : null;
+    
+    // Build user info section
+    var userInfoSection = '';
+    if (userName) {
+        userInfoSection += `<span class="navbar-text me-3">Bons estudos, <strong>${userName}</strong></span>`;
+    }
+    if (userMembersince) {
+        userInfoSection += `<span class="navbar-text">Membro desde: <strong>${userMembersince}</strong></span>`;
+    }
+    
+    var l = `\n</ul>\n<div class="d-flex align-items-center">\n    <!-- User Info Section -->\n    <div class="d-flex flex-column flex-lg-row align-items-center me-lg-3">\n        ${userInfoSection}\n    </div>\n    <!-- Search Form -->\n    <form class="d-flex" method="get" action="/${a}:search">\n        <input class="form-control me-2" name="q" type="search" aria-label="Buscar" placeholder=Pesquisar no diretório..." value="${t.is_search_page && t.q || ""}" required>\n        <button class="btn ${UI.search_button_class}" onclick="if($('#search_bar_form>input').val()) $('#search_bar_form').submit();" type="submit">Buscar</button>\n    </form>\n</div>\n</div>\n</div>\n</nav>\n`;
     t.root_type < 2 && (n += l),
     $("#nav").html(n)
 }
@@ -96,7 +109,6 @@ function requestListPath(e, t, n, a, i=3, o=!1) {
     $("#update").show(),
     document.getElementById("update").innerHTML = "<div class='alert alert-info' role='alert'> Conectando...</div></div></div>",
     o && (e = "/0:fallback"),
-    console.log("Performing Request again"),
     function t() {
         fetch(o ? "/0:fallback" : e, {
             method: "POST",
@@ -117,7 +129,7 @@ function requestListPath(e, t, n, a, i=3, o=!1) {
         }
         )).catch((function(e) {
             i > 0 ? (sleep(2e3),
-            document.getElementById("update").innerHTML = "<div class='alert alert-info' role='alert'> Retrying...</div></div></div>",
+            document.getElementById("update").innerHTML = "<div class='alert alert-info' role='alert'> Tentando novamente...</div></div></div>",
             t()) : (document.getElementById("update").innerHTML = "<div class='alert alert-danger' role='alert'> Unable to get data from the server. Something went wrong.</div></div></div>",
             document.getElementById("list").innerHTML = "<div class='alert alert-danger' role='alert'> We were unable to get data from the server. " + e + "</div></div></div>",
             $("#update").hide())
@@ -153,7 +165,7 @@ function requestSearch(e, t, n=3) {
         }
         )).catch((function(t) {
             n > 0 ? (sleep(2e3),
-            $("#update").html("<div class='alert alert-info' role='alert'> Retrying...</div></div></div>"),
+            $("#update").html("<div class='alert alert-info' role='alert'> Tentando novamente...</div></div></div>"),
             e(n - 1)) : ($("#update").html("<div class='alert alert-danger' role='alert'> Unable to get data from the server. Something went wrong. 3 Failures</div></div></div>"),
             $("#list").html("<div class='alert alert-danger' role='alert'> We were unable to get data from the server.</div></div></div>"),
             $("#spinner").remove())
@@ -162,15 +174,14 @@ function requestSearch(e, t, n=3) {
     }(n)
 }
 function list(e, t="", n=!1) {
-    console.log(t);
-    var a = `<div class="container">${UI.fixed_header ? "<br>" : ""}\n    <div id="update"></div>\n    <div id="head_md" style="display:none; padding: 20px 20px;"></div>\n    <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n      <div class="d-flex align-items-center justify-content-between">\n        <div class="form-check mr-3">\n          <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n          <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n        </div>\n        <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n      </div>\n    </div>\n    <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0; padding-bottom: 0rem;">\n      <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">\n        <ol class="breadcrumb" id="folderne">\n          <li class="breadcrumb-item"><a href="/">Início</a></li>`
+    var a = `<div class="container">${UI.fixed_header ? "<br>" : ""}\n    <style>\n      .path-navigation-container {\n        margin-bottom: 1rem;\n        padding: 0.75rem 1rem;\n        background: rgba(0,0,0,0.02);\n        border-radius: 8px;\n        border-left: 4px solid #007bff;\n        transition: all 0.3s ease;\n      }\n      [data-theme="dark"] .path-navigation-container {\n        background: rgba(255,255,255,0.05);\n        border-left-color: #0d6efd;\n      }\n      .path-navigation-container:hover {\n        background: rgba(0,0,0,0.04);\n        box-shadow: 0 2px 4px rgba(0,0,0,0.05);\n      }\n      [data-theme="dark"] .path-navigation-container:hover {\n        background: rgba(255,255,255,0.08);\n      }\n      .breadcrumb {\n        margin-bottom: 0;\n        background: transparent;\n        padding: 0;\n      }\n      .breadcrumb-item a {\n        text-decoration: none;\n        color: #007bff;\n        transition: all 0.2s ease;\n        display: inline-flex;\n        align-items: center;\n      }\n      [data-theme="dark"] .breadcrumb-item a {\n        color: #0d6efd;\n      }\n      .breadcrumb-item a:hover {\n        color: #0056b3;\n        transform: translateX(2px);\n      }\n      [data-theme="dark"] .breadcrumb-item a:hover {\n        color: #3d8bfd;\n      }\n      .breadcrumb-item.active {\n        color: #6c757d;\n        font-weight: 500;\n      }\n      [data-theme="dark"] .breadcrumb-item.active {\n        color: #adb5bd;\n      }\n    </style>\n    <div id="update"></div>\n    <div id="head_md" style="display:none; padding: 20px 20px;"></div>\n    <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n      <div class="d-flex align-items-center justify-content-between">\n        <div class="form-check mr-3">\n          <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n          <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n        </div>\n        <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n      </div>\n    </div>\n    <div class="path-navigation-container">\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb" id="folderne" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">\n          <li class="breadcrumb-item">\n            <a href="/">\n              <i class="bi bi-house-door me-1"></i>\n              <span>Início</span>\n            </a>\n          </li>`
       , i = window.location.pathname.trim("/").split("/")
       , o = "/";
     if (i.length > 1)
         for (var l in i) {
             var r = i[l]
               , s = decodeURIComponent(r).replace(/\//g, "%2F").replace(/\?.+/g, "$'")
-              , d = s.length > 15 ? s.slice(0, 5) + "..." : s.slice(0, 15);
+              , d = s.length > 30 ? s.slice(0, 25) + "..." : s;
             if (o += r + "/",
             "" === d)
                 break;
@@ -229,22 +240,15 @@ function list(e, t="", n=!1) {
         const e = document.querySelectorAll('input[type="checkbox"]:checked')
           , t = [];
         if (0 === e.length)
-            return void alert("Nenhum item foi selecionado");
+            return void showErrorModal("Nenhum Item Selecionado", "Por favor, selecione pelo menos um item para baixar.");
         
         e.forEach((e => {
             const n = e.value;
             t.push(n);
         }));
     
-        t.forEach((link) => {
-            const a = document.createElement("a");
-            a.href = link;
-            a.download = "";
-            a.target = "_blank";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        });
+        // Use the new bulk download modal
+        initiateBulkDownload(t);
     }));
 }
 function askPassword(e) {
@@ -255,7 +259,6 @@ function askPassword(e) {
 }
 function append_files_to_fallback_list(e, t) {
     try {
-        console.log("append_files_to_fallback_list");
         var n = $("#list")
           , a = null === n.data("nextPageToken")
           , o = "0" == n.data("curPageIndex");
@@ -274,13 +277,10 @@ function append_files_to_fallback_list(e, t) {
                 s.size = formatFileSize(s.size);
                 r = !0;
                 var c = s.name
-                  , p = UI.second_domain_for_dl ? UI.downloaddomain + s.link : window.location.origin + s.link;
+                  , p = UI.second_domain_for_dl ? UI.downloaddomain + s.link : 
+                        (s.link.startsWith('http') ? s.link : window.location.origin + s.link);
                 c.replace(new RegExp("#","g"), "%23").replace(new RegExp("\\?","g"), "%3F");
-                a && "README.md" == s.name && UI.render_readme_md && get_file(d, s, (function(e) {
-                    markdown("#readme_md", e),
-                    $("img").addClass("img-fluid")
-                }
-                )),
+                a && renderReadmeFile(s.id, s.name, s.mimeType),
                 "HEAD.md" == s.name && UI.render_head_md && get_file(d, s, (function(e) {
                     markdown("#head_md", e),
                     $("img").addClass("img-fluid")
@@ -291,7 +291,7 @@ function append_files_to_fallback_list(e, t) {
                 " view",
                 html += '<div class="list-group-item list-group-item-action">' + (UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + p + '" id="flexCheckDefault">' : ""),
                 "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${m}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${m}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${m}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${m}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${m}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${m}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${m}|`) >= 0 ? html += pdf_icon : html += file_icon,
-                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${d}&a=view">${s.name}</a>${UI.display_download ? `<a href="${p}"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + s.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + s.modifiedTime + " </span>" : ""}</div>`
+                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${d}&a=view">${s.name}</a>${UI.display_download ? `<a href="#" onclick="initiateDownload('${s.name}', '${p}', '${s.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + s.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + s.modifiedTime + " </span>" : ""}</div>`
             }
         }
         if (r && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -315,37 +315,823 @@ function append_files_to_fallback_list(e, t) {
         total_items = n.find(".countitems").length,
         total_files = n.find(".size_items").length,
         0 == total_items ? $("#count").removeClass("d-none").find(".number").text("Pasta vazia.") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " itens"),
-        0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero Files") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
+        0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero arquivos") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
     } catch (e) {
         console.log(e)
     }
 }
+// Função para ordenar itens por data e nome
+function sortItems(items, sortBy = 'name', sortOrder = 'asc') {
+    return items.sort((a, b) => {
+        let comparison = 0;
+        
+        if (sortBy === 'date') {
+            // Função para converter data DD-MM-YYYY HH:mm:ss para Date
+            function parseDate(dateString) {
+                // Se já está em formato ISO, usar diretamente
+                if (dateString.includes('T') || dateString.includes('Z')) {
+                    return new Date(dateString);
+                }
+                
+                // Converter formato DD-MM-YYYY HH:mm:ss para YYYY-MM-DD HH:mm:ss
+                const match = dateString.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+                if (match) {
+                    const [, day, month, year, hour, minute, second] = match;
+                    return new Date(year, month - 1, day, hour, minute, second);
+                }
+                
+                // Fallback para new Date() normal
+                return new Date(dateString);
+            }
+            
+            // Ordenar por data de modificação
+            const dateA = parseDate(a.modifiedTime);
+            const dateB = parseDate(b.modifiedTime);
+            
+            comparison = dateA - dateB;
+        } else if (sortBy === 'name') {
+            // Ordenar por nome (case insensitive)
+            comparison = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        } else if (sortBy === 'size') {
+            // Ordenar por tamanho (apenas arquivos)
+            const sizeA = a.size ? parseInt(a.size) : 0;
+            const sizeB = b.size ? parseInt(b.size) : 0;
+            comparison = sizeA - sizeB;
+        } else if (sortBy === 'type') {
+            // Ordenar por tipo (pastas primeiro, depois arquivos)
+            const typeA = a.mimeType === 'application/vnd.google-apps.folder' ? 0 : 1;
+            const typeB = b.mimeType === 'application/vnd.google-apps.folder' ? 0 : 1;
+            comparison = typeA - typeB;
+            
+            // Se o tipo for igual, ordenar por nome
+            if (comparison === 0) {
+                comparison = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+            }
+        }
+        
+        return sortOrder === 'desc' ? -comparison : comparison;
+    });
+}
+
+// Função para criar controles de ordenação e filtro
+function createSortControls() {
+    return `
+    <div id="sortControls" class="mb-3">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <label for="searchInput" class="form-label me-2 mb-0">Buscar:</label>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Digite o nome da pasta/arquivo..." style="max-width: 250px;">
+                    <button id="refreshBtn" class="btn btn-outline-secondary btn-sm ms-2" onclick="window.location.reload()" title="Atualizar página">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center justify-content-end">
+                    <label for="sortSelect" class="form-label me-2 mb-0">Ordenar por:</label>
+                    <select id="sortSelect" class="form-select form-select-sm" style="width: auto;">
+                        <option value="name-asc">Nome (A-Z)</option>
+                        <option value="name-desc">Nome (Z-A)</option>
+                        <option value="date-desc">Data (Mais recente)</option>
+                        <option value="date-asc">Data (Mais antiga)</option>
+                        <option value="type-asc">Tipo (Pastas primeiro)</option>
+                        <option value="size-desc">Tamanho (Maior)</option>
+                        <option value="size-asc">Tamanho (Menor)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+// Função para aplicar ordenação e filtro
+function applySortingAndFilter(currentPath, sortBy, sortOrder, searchTerm = '') {
+    const listElement = $("#list");
+    
+    // Coletar todos os itens do DOM atual (sem regenerar HTML)
+    const allItems = [];
+    listElement.find('.countitems, .size_items').each(function() {
+        const item = $(this);
+        const isFolder = item.hasClass('countitems');
+        const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+        
+        // Extrair data do badge se existir
+        const badge = item.find('.badge');
+        let modifiedTime = new Date().toISOString();
+        if (badge.length) {
+            const dateText = badge.text().trim();
+            // Converter data do formato brasileiro para ISO
+            try {
+                // Formato: DD-MM-YYYY HH:mm:ss
+                const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+                if (dateMatch) {
+                    const [, day, month, year, hour, minute, second] = dateMatch;
+                    modifiedTime = new Date(year, month - 1, day, hour, minute, second).toISOString();
+                } else {
+                    // Tentar formato simples DD/MM/YYYY
+                    const simpleDateMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (simpleDateMatch) {
+                        const [, day, month, year] = simpleDateMatch;
+                        modifiedTime = new Date(year, month - 1, day).toISOString();
+                    }
+                }
+            } catch (e) {
+                console.log('Erro ao converter data:', dateText, e);
+            }
+        }
+        
+        // Extrair tamanho se for arquivo
+        const sizeText = item.find('.float-end').text().trim();
+        const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
+        
+        allItems.push({
+            name: name,
+            modifiedTime: modifiedTime,
+            size: size,
+            mimeType: isFolder ? 'application/vnd.google-apps.folder' : 'file',
+            element: item[0] // Manter referência ao elemento DOM
+        });
+    });
+    
+    // Aplicar filtro de busca se fornecido
+    let filteredItems = allItems;
+    
+    if (searchTerm && searchTerm.trim() !== '') {
+        const searchLower = searchTerm.toLowerCase().trim();
+        filteredItems = allItems.filter(item => 
+            item.name.toLowerCase().includes(searchLower)
+        );
+    } else {
+        // Se não há termo de busca, mostrar todos os itens
+        filteredItems = allItems;
+    }
+    
+    // Ordenar os itens
+    console.log('Itens antes da ordenação:', filteredItems.slice(0, 3).map(item => ({
+        name: item.name,
+        modifiedTime: item.modifiedTime,
+        date: new Date(item.modifiedTime)
+    })));
+    const sortedItems = sortItems(filteredItems, sortBy, sortOrder);
+    console.log('Itens após ordenação:', sortedItems.slice(0, 3).map(item => ({
+        name: item.name,
+        modifiedTime: item.modifiedTime,
+        date: new Date(item.modifiedTime)
+    })));
+    
+    // Reordenar os elementos no DOM sem regenerar HTML
+    listElement.empty();
+    sortedItems.forEach(item => {
+        listElement.append(item.element);
+    });
+    
+    // Salvar preferências
+    localStorage.setItem('sortPreference', JSON.stringify({ sortBy, sortOrder }));
+    localStorage.setItem('searchTerm', searchTerm);
+    
+    // Mostrar feedback visual
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = searchTerm;
+    }
+}
+
+// Função para aplicar filtro dinâmico
+function applyDynamicFilter(searchTerm = '') {
+    const listElement = $("#list");
+    
+    // Método simples e direto: trabalhar diretamente com os elementos DOM
+    const allItems = [];
+    listElement.find('.countitems, .size_items').each(function() {
+        const item = $(this);
+        const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+        
+        allItems.push({
+            name: name,
+            element: item[0]
+        });
+    });
+    
+    // Aplicar filtro
+    if (searchTerm && searchTerm.trim() !== '') {
+        const searchLower = searchTerm.toLowerCase().trim();
+        allItems.forEach(item => {
+            const matches = item.name.toLowerCase().includes(searchLower);
+            if (matches) {
+                $(item.element).show();
+            } else {
+                $(item.element).hide();
+            }
+        });
+    } else {
+        // Mostrar todos os itens
+        allItems.forEach(item => {
+            $(item.element).show();
+        });
+    }
+    
+    // Salvar termo de busca
+    localStorage.setItem('searchTerm', searchTerm);
+}
+
+// Função para aplicar ordenação
+function applySorting(sortBy, sortOrder) {
+    const listElement = $("#list");
+    
+    // Usar dados originais se disponíveis para ordenação mais precisa
+    if (window.currentItems && window.currentItems.length > 0) {
+        // Criar array de itens com dados originais e elementos DOM
+        const allItems = [];
+        
+        // Primeiro, coletar todos os elementos DOM visíveis
+        listElement.find('.countitems:visible, .size_items:visible').each(function() {
+            const item = $(this);
+            const isFolder = item.hasClass('countitems');
+            const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            
+            // Determinar o elemento correto para mover
+            let elementToMove = item[0];
+            if (item.hasClass('size_items')) {
+                // Para arquivos, mover o div pai que contém toda a estrutura
+                const parentDiv = item.closest('.list-group-item')[0];
+                if (parentDiv) {
+                    elementToMove = parentDiv;
+                }
+            }
+            
+            // Encontrar dados originais correspondentes
+            const originalData = window.currentItems.find(orig => orig.name === name);
+            
+            if (originalData) {
+                // Usar dados originais da API
+                const itemData = {
+                    name: originalData.name,
+                    modifiedTime: originalData.modifiedTime,
+                    size: originalData.size ? parseInt(originalData.size) : 0,
+                    mimeType: originalData.mimeType,
+                    element: elementToMove
+                };
+                
+                
+                allItems.push(itemData);
+            } else {
+                // Fallback: extrair do DOM se não encontrar dados originais
+                const badge = item.find('.badge');
+                let modifiedTime = new Date().toISOString();
+                if (badge.length) {
+                    const dateText = badge.text().trim();
+                    try {
+                        const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+                        if (dateMatch) {
+                            const [, day, month, year, hour, minute, second] = dateMatch;
+                            modifiedTime = new Date(year, month - 1, day, hour, minute, second).toISOString();
+                        }
+                    } catch (e) {
+                        console.log('Erro ao converter data:', dateText, e);
+                    }
+                }
+                
+                const sizeText = item.find('.float-end').text().trim();
+                const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
+                
+                const fallbackData = {
+                    name: name,
+                    modifiedTime: modifiedTime,
+                    size: size,
+                    mimeType: isFolder ? 'application/vnd.google-apps.folder' : 'file',
+                    element: elementToMove
+                };
+                
+                
+                allItems.push(fallbackData);
+            }
+        });
+        
+        // Ordenar os itens
+        const sortedItems = sortItems(allItems, sortBy, sortOrder);
+        
+        // Reordenar no DOM (elementos já são os corretos)
+        listElement.empty();
+        sortedItems.forEach(item => {
+            listElement.append(item.element);
+        });
+    } else {
+        // Fallback: método antigo se não houver dados originais
+        const allItems = [];
+        listElement.find('.countitems:visible, .size_items:visible').each(function() {
+            const item = $(this);
+            const isFolder = item.hasClass('countitems');
+            const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            
+            // Determinar o elemento correto para mover
+            let elementToMove = item[0];
+            if (item.hasClass('size_items')) {
+                // Para arquivos, mover o div pai que contém toda a estrutura
+                const parentDiv = item.closest('.list-group-item')[0];
+                if (parentDiv) {
+                    elementToMove = parentDiv;
+                }
+            }
+            
+            const badge = item.find('.badge');
+            let modifiedTime = new Date().toISOString();
+            if (badge.length) {
+                const dateText = badge.text().trim();
+                try {
+                    const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+                    if (dateMatch) {
+                        const [, day, month, year, hour, minute, second] = dateMatch;
+                        modifiedTime = new Date(year, month - 1, day, hour, minute, second).toISOString();
+                    }
+                } catch (e) {
+                    console.log('Erro ao converter data:', dateText, e);
+                }
+            }
+            
+            const sizeText = item.find('.float-end').text().trim();
+            const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
+            
+            allItems.push({
+                name: name,
+                modifiedTime: modifiedTime,
+                size: size,
+                mimeType: isFolder ? 'application/vnd.google-apps.folder' : 'file',
+                element: elementToMove
+            });
+        });
+        
+        const sortedItems = sortItems(allItems, sortBy, sortOrder);
+        listElement.empty();
+        sortedItems.forEach(item => {
+            listElement.append(item.element);
+        });
+    }
+    
+    // Salvar preferência
+    localStorage.setItem('sortPreference', JSON.stringify({ sortBy, sortOrder }));
+}
+
+// Função para gerenciar histórico de pastas
+function addToHistory(path, folderName) {
+    const history = getHistory();
+    const newEntry = {
+        path: path,
+        name: folderName,
+        timestamp: new Date().toISOString(),
+        displayTime: new Date().toLocaleString('pt-BR')
+    };
+    
+    // Remover entrada existente se já existir
+    const existingIndex = history.findIndex(item => item.path === path);
+    if (existingIndex !== -1) {
+        history.splice(existingIndex, 1);
+    }
+    
+    // Adicionar no início da lista
+    history.unshift(newEntry);
+    
+    // Manter apenas os últimos 20 itens
+    if (history.length > 20) {
+        history.splice(20);
+    }
+    
+    // Salvar no localStorage
+    localStorage.setItem('folderHistory', JSON.stringify(history));
+    
+    // Atualizar o histórico na UI
+    updateHistoryDisplay();
+}
+
+function getHistory() {
+    try {
+        const history = localStorage.getItem('folderHistory');
+        return history ? JSON.parse(history) : [];
+    } catch (e) {
+        console.log('Erro ao carregar histórico:', e);
+        return [];
+    }
+}
+
+function clearHistory() {
+    localStorage.removeItem('folderHistory');
+    updateHistoryDisplay();
+}
+
+function updateHistoryDisplay() {
+    const history = getHistory();
+    const historyContainer = document.getElementById('historyContainer');
+    
+    if (!historyContainer) return;
+    
+    if (history.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="text-muted text-center py-3">
+                <i class="bi bi-clock-history"></i><br>
+                Nenhuma pasta visitada recentemente
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    history.forEach((item, index) => {
+        const shortName = item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name;
+        const isCurrentPath = window.location.pathname === item.path;
+        const currentClass = isCurrentPath ? 'bg-primary text-white' : '';
+        
+        html += `
+            <div class="history-item d-flex align-items-center p-2 border-bottom ${currentClass}" style="cursor: pointer; transition: background-color 0.2s;" 
+                 onmouseover="this.style.backgroundColor='${isCurrentPath ? '#0056b3' : '#f8f9fa'}'" 
+                 onmouseout="this.style.backgroundColor='${isCurrentPath ? '#0056b3' : 'transparent'}'"
+                 onclick="navigateToPath('${item.path}')">
+                <div class="flex-grow-1">
+                    <div class="fw-bold text-truncate" title="${item.name}">
+                        ${isCurrentPath ? '<i class="bi bi-arrow-right-circle me-1"></i>' : ''}${shortName}
+                    </div>
+                    <small class="${isCurrentPath ? 'text-light' : 'text-muted'}">${item.displayTime}</small>
+                </div>
+                <button class="btn btn-sm ${isCurrentPath ? 'btn-outline-light' : 'btn-outline-danger'} ms-2" onclick="event.stopPropagation(); removeFromHistory('${item.path}')" title="Remover">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `;
+    });
+    
+    historyContainer.innerHTML = html;
+}
+
+function removeFromHistory(path) {
+    const history = getHistory();
+    const filteredHistory = history.filter(item => item.path !== path);
+    localStorage.setItem('folderHistory', JSON.stringify(filteredHistory));
+    updateHistoryDisplay();
+}
+
+function navigateToPath(path) {
+    window.location.href = path;
+}
+
+// Função para criar o painel de histórico
+function createHistoryPanel() {
+    return `
+    <div id="historyPanel" class="position-fixed" style="bottom: 80px; right: 20px; z-index: 1050; width: 320px; max-height: 60vh; overflow-y: auto;">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Histórico
+                </h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-light btn-sm" onclick="toggleHistoryPanel()" title="Minimizar">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="clearHistory()" title="Limpar histórico">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
+                <div id="historyContainer">
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-clock-history"></i><br>
+                        Carregando histórico...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        /* Estilos para o histórico */
+        #historyPanel {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .history-item {
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background-color: #f8f9fa !important;
+            transform: translateX(2px);
+        }
+        
+        [data-theme="dark"] .history-item:hover {
+            background-color: #2d2d2d !important;
+        }
+        
+        [data-theme="dark"] #historyPanel .card {
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] #historyPanel .card-body {
+            background-color: #2d2d2d !important;
+        }
+        
+        [data-theme="dark"] .history-item {
+            border-bottom-color: #444 !important;
+        }
+        
+        [data-theme="dark"] .history-item .text-muted {
+            color: #aaa !important;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            #historyPanel {
+                width: 280px !important;
+                right: 10px !important;
+                bottom: 70px !important;
+            }
+            
+            #historyToggle {
+                width: 35px !important;
+                height: 35px !important;
+                right: 10px !important;
+                bottom: 10px !important;
+                font-size: 0.8rem !important;
+            }
+        }
+    </style>
+    `;
+}
+
+// Função para criar o botão flutuante do histórico
+function createHistoryButton() {
+    return `
+    <button id="historyToggle" class="btn btn-primary position-fixed" 
+            style="bottom: 20px; right: 20px; z-index: 1050; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.15); font-size: 0.9rem;"
+            onclick="toggleHistoryPanel()" title="Ver histórico de pastas">
+        <i class="bi bi-clock-history"></i>
+    </button>
+    `;
+}
+
+// Função para criar o botão de configurações
+function createSettingsButton() {
+    return `
+    <div class="position-fixed" style="bottom: 20px; left: 20px; z-index: 1050;">
+        <div class="dropdown">
+            <button class="btn btn-secondary" type="button" id="settingsDropdown" 
+                    data-bs-toggle="dropdown" aria-expanded="false" 
+                    style="width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.15); font-size: 0.9rem;"
+                    title="Configurações">
+                <i class="bi bi-gear-fill"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown" 
+                style="min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <li>
+                    <a class="dropdown-item" href="#" onclick="toggleDarkMode()" id="darkModeToggle">
+                        <i class="bi bi-moon-fill me-2" id="dark-mode-icon"></i>
+                        <span id="darkModeText">Modo Noturno</span>
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="#" onclick="toggleReadmeRendering()" id="readmeToggle">
+                        <i class="bi bi-file-text me-2" id="readme-icon"></i>
+                        <span id="readmeText">Renderizar README</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" onclick="toggleTxtRendering()" id="txtToggle">
+                        <i class="bi bi-file-text me-2" id="txt-icon"></i>
+                        <span id="txtText">Renderizar Texto</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    `;
+}
+
+function toggleHistoryPanel() {
+    const panel = document.getElementById('historyPanel');
+    const button = document.getElementById('historyToggle');
+    
+    if (panel) {
+        panel.remove();
+        if (button) button.style.display = 'block';
+    } else {
+        // Criar e mostrar o painel
+        const historyPanel = createHistoryPanel();
+        document.body.insertAdjacentHTML('beforeend', historyPanel);
+        updateHistoryDisplay();
+        if (button) button.style.display = 'none';
+    }
+}
+
+// Função para alternar renderização de README
+function toggleReadmeRendering() {
+    const currentSetting = localStorage.getItem('renderReadme') === 'true';
+    const newSetting = !currentSetting;
+    
+    localStorage.setItem('renderReadme', newSetting.toString());
+    
+    // Atualizar ícone e texto
+    const icon = document.getElementById('readme-icon');
+    const text = document.getElementById('readmeText');
+    
+    if (newSetting) {
+        icon.className = 'bi bi-file-text-fill me-2';
+        text.textContent = 'Ocultar README';
+    } else {
+        icon.className = 'bi bi-file-text me-2';
+        text.textContent = 'Renderizar README';
+    }
+    
+    // Recarregar a página atual para aplicar a mudança
+    window.location.reload();
+}
+
+function toggleTxtRendering() {
+    const currentSetting = localStorage.getItem('renderTxt') === 'true';
+    const newSetting = !currentSetting;
+    
+    localStorage.setItem('renderTxt', newSetting.toString());
+    
+    // Atualizar ícone e texto
+    const icon = document.getElementById('txt-icon');
+    const text = document.getElementById('txtText');
+    
+    if (newSetting) {
+        icon.className = 'bi bi-file-text-fill me-2';
+        text.textContent = 'Ocultar Texto';
+    } else {
+        icon.className = 'bi bi-file-text me-2';
+        text.textContent = 'Renderizar Texto';
+    }
+    
+    // Recarregar a página atual para aplicar a mudança
+    window.location.reload();
+}
+
+// Função para inicializar configurações
+function initializeSettings() {
+    // Inicializar modo noturno
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const darkModeIcon = document.getElementById('dark-mode-icon');
+    const darkModeText = document.getElementById('darkModeText');
+    
+    if (savedTheme === 'dark') {
+        if (darkModeIcon) darkModeIcon.className = 'bi bi-sun-fill me-2';
+        if (darkModeText) darkModeText.textContent = 'Modo Claro';
+    } else {
+        if (darkModeIcon) darkModeIcon.className = 'bi bi-moon-fill me-2';
+        if (darkModeText) darkModeText.textContent = 'Modo Noturno';
+    }
+    
+    // Inicializar renderização de README
+    const renderReadme = localStorage.getItem('renderReadme') === 'true';
+    const readmeIcon = document.getElementById('readme-icon');
+    const readmeText = document.getElementById('readmeText');
+    
+    if (renderReadme) {
+        if (readmeIcon) readmeIcon.className = 'bi bi-file-text-fill me-2';
+        if (readmeText) readmeText.textContent = 'Ocultar README';
+    } else {
+        if (readmeIcon) readmeIcon.className = 'bi bi-file-text me-2';
+        if (readmeText) readmeText.textContent = 'Renderizar README';
+    }
+    
+    // Inicializar renderização de TXT
+    const renderTxt = localStorage.getItem('renderTxt') === 'true';
+    const txtIcon = document.getElementById('txt-icon');
+    const txtText = document.getElementById('txtText');
+    
+    if (renderTxt) {
+        if (txtIcon) txtIcon.className = 'bi bi-file-text-fill me-2';
+        if (txtText) txtText.textContent = 'Ocultar Texto';
+    } else {
+        if (txtIcon) txtIcon.className = 'bi bi-file-text me-2';
+        if (txtText) txtText.textContent = 'Renderizar Texto';
+    }
+}
+
 function append_files_to_list(e, t) {
     var n = $("#list")
       , a = null === n.data("nextPageToken")
       , o = "0" == n.data("curPageIndex");
+    
+    // Adicionar controles de ordenação apenas na primeira página
+    if (o && !document.getElementById('sortControls')) {
+        const sortControls = createSortControls();
+        n.before(sortControls);
+        
+        // Carregar preferência de ordenação salva
+        const savedPreference = localStorage.getItem('sortPreference');
+        if (savedPreference) {
+            try {
+                const { sortBy, sortOrder } = JSON.parse(savedPreference);
+                document.getElementById('sortSelect').value = `${sortBy}-${sortOrder}`;
+            } catch (e) {
+                console.log('Erro ao carregar preferência de ordenação:', e);
+            }
+        }
+        
+        // Adicionar event listener para mudança no select (aplicar automaticamente)
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const sortValue = this.value;
+            const [sortBy, sortOrder] = sortValue.split('-');
+            applySorting(sortBy, sortOrder);
+        });
+
+        // Adicionar event listener para o campo de busca (filtro dinâmico)
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value;
+            applyDynamicFilter(searchTerm);
+        });
+        
+        // Carregar termo de busca salvo
+        const savedSearchTerm = localStorage.getItem('searchTerm');
+        if (savedSearchTerm) {
+            document.getElementById('searchInput').value = savedSearchTerm;
+        }
+    }
+    
+    // Adicionar botões apenas na primeira página
+    if (o && !document.getElementById('historyToggle')) {
+        const historyButton = createHistoryButton();
+        document.body.insertAdjacentHTML('beforeend', historyButton);
+    }
+    
+    // Adicionar botão de configurações apenas na primeira página
+    if (o && !document.getElementById('settingsDropdown')) {
+        const settingsButton = createSettingsButton();
+        document.body.insertAdjacentHTML('beforeend', settingsButton);
+        
+        // Inicializar configurações
+        initializeSettings();
+    }
+    
+    // Adicionar nuvens no background se não existirem
+    addCloudsBackground();
+    
+    // Adicionar pasta atual ao histórico (apenas se não for a raiz)
+    if (e && e !== '/' && e !== '') {
+        const pathSegments = e.split('/').filter(segment => segment);
+        const folderName = pathSegments[pathSegments.length - 1] || 'Pasta';
+        addToHistory(e, decodeURIComponent(folderName));
+    }
+    
     html = "";
     let l = [];
     var r = 0
       , s = !1;
-    for (i in t) {
-        var d = t[i]
+    
+    // Armazenar dados originais para ordenação
+    window.currentItems = [...t];
+    
+    // Determinar ordenação baseada na preferência salva
+    let sortBy = 'type';
+    let sortOrder = 'asc';
+    
+    const savedPreference = localStorage.getItem('sortPreference');
+    if (savedPreference) {
+        try {
+            const { sortBy: savedSortBy, sortOrder: savedSortOrder } = JSON.parse(savedPreference);
+            sortBy = savedSortBy;
+            sortOrder = savedSortOrder;
+        } catch (e) {
+            console.log('Erro ao carregar preferência de ordenação:', e);
+        }
+    }
+    
+    // Ordenar os itens antes de processar
+    const sortedItems = sortItems([...t], sortBy, sortOrder);
+    
+    for (i in sortedItems) {
+        var d = sortedItems[i]
           , c = e + (encodeURIComponent(d.name).replace(/\//g, "%2F") + "/").replace(new RegExp("#","g"), "%23").replace(new RegExp("\\?","g"), "%3F");
         if (d.modifiedTime = utc2delhi(d.modifiedTime),
-        "application/vnd.google-apps.folder" == d.mimeType)
-            html += `<a href="${c}" style="color: ${UI.folder_text_color};" class="countitems list-group-item list-group-item-action"> ${folder_icon} ${d.name} ${UI.display_time ? '<span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</a>`;
-        else {
+        "application/vnd.google-apps.folder" == d.mimeType) {
+            // Verificar se a pasta está no histórico
+            const history = getHistory();
+            const isInHistory = history.some(item => item.path === c);
+            const historyIcon = isInHistory ? '<i class="bi bi-clock-history text-warning me-1" title="Visitada recentemente"></i>' : '';
+            
+            html += `<a href="${c}" style="color: ${UI.folder_text_color};" class="countitems list-group-item list-group-item-action" onclick="addToHistory('${c}', '${d.name.replace(/'/g, "\\'")}')"> ${folder_icon} ${historyIcon}${d.name} ${UI.display_time ? '<span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</a>`;
+        } else {
             r = r + Number(d.size);
             d.size = formatFileSize(d.size);
             s = !0;
             var p = d.name
-              , m = UI.second_domain_for_dl ? UI.downloaddomain + d.link : window.location.origin + d.link
+              , m = UI.second_domain_for_dl ? UI.downloaddomain + d.link : 
+                    (d.link.startsWith('http') ? d.link : window.location.origin + d.link)
               , g = e + p.replace(new RegExp("#","g"), "%23").replace(new RegExp("\\?","g"), "%3F");
-            a && "README.md" == d.name && UI.render_readme_md && get_file(c, d, (function(e) {
-                markdown("#readme_md", e),
-                $("img").addClass("img-fluid")
-            }
-            )),
+            a && renderReadmeFile(d.id, d.name, d.mimeType),
             "HEAD.md" == d.name && UI.render_head_md && get_file(c, d, (function(e) {
                 markdown("#head_md", e),
                 $("img").addClass("img-fluid")
@@ -355,9 +1141,9 @@ function append_files_to_list(e, t) {
             console.log(f),
             g += "?a=view",
             " view",
-            html += '<div class="list-group-item list-group-item-action">' + (UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + m + '" id="flexCheckDefault">' : ""),
+            html += '<div class="list-group-item list-group-item-action">' + (UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + m + '" data-name="' + d.name + '" id="flexCheckDefault">' : ""),
             "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${f}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${f}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${f}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${f}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${f}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${f}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${f}|`) >= 0 ? html += pdf_icon : html += file_icon,
-            html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}">${d.name}</a>${UI.display_download ? `<a href="${m}"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</div>`
+            html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}">${d.name}</a>${UI.display_download ? `<a href="#" onclick="initiateDownload('${d.name}', '${m}', '${d.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</div>`
         }
     }
     if (s && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -376,15 +1162,26 @@ function append_files_to_list(e, t) {
         }
         localStorage.setItem(e, JSON.stringify(n))
     }
-    n.html(("0" == n.data("curPageIndex") ? "" : n.html()) + html),
+    
+    // Se não é a primeira página, aplicar ordenação a todos os itens
+    if ("0" != n.data("curPageIndex")) {
+        // Para paginação, usar uma abordagem mais simples: apenas anexar e reordenar
+        n.html(n.html() + html);
+        
+        // Aplicar ordenação a todos os itens visíveis
+        applySorting(sortBy, sortOrder);
+    } else {
+        n.html(html);
+    }
+    
     a && (total_size = formatFileSize(r) || "0 Bytes",
     total_items = n.find(".countitems").length,
     total_files = n.find(".size_items").length,
     0 == total_items ? $("#count").removeClass("d-none").find(".number").text("Pasta vazia.") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " itens"),
-    0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero Files") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com o tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
+    0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Zero arquivos") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com o tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
 }
 function render_search_result_list() {
-    var e = `\n  <div class="container"><br>\n  <div id="update"></div>\n  <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n  <div class="d-flex align-items-center justify-content-between">\n    <div class="form-check mr-3">\n      <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n      <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n    </div>\n    <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n  </div>\n  </div>\n  <div class="card">\n  <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0;">Search Results</div>\n  <div id="list" class="list-group text-break">\n  </div>\n  </div>\n  <div class="${UI.file_count_alert_class} text-center d-none" role="alert" id="count"><span class="number text-center"></span> | <span class="totalsize text-center"></span></div>\n  <div id="readme_md" style="display:none; padding: 20px 20px;"></div>\n  </div>\n  `;
+    var e = `\n  <div class="container"><br>\n  <div id="update"></div>\n  <div class="container" id="select_items" style="padding: 0px 50px 10px; display:none;">\n  <div class="d-flex align-items-center justify-content-between">\n    <div class="form-check mr-3">\n      <input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" id="select-all-checkboxes">\n      <label class="form-check-label" for="select-all-checkboxes">Selecionar todos</label>\n    </div>\n    <button id="handle-multiple-items-copy" style="padding: 5px 10px; font-size: 12px;" class="btn btn-success">Baixar</button>\n  </div>\n  </div>\n  <div class="card">\n  <div class="${UI.path_nav_alert_class} d-flex align-items-center" role="alert" style="margin-bottom: 0;">Resultados da Busca</div>\n  <div id="list" class="list-group text-break">\n  </div>\n  </div>\n  <div class="${UI.file_count_alert_class} text-center d-none" role="alert" id="count"><span class="number text-center"></span> | <span class="totalsize text-center"></span></div>\n  <div id="readme_md" style="display:none; padding: 20px 20px;"></div>\n  </div>\n  `;
     $("#content").html(e),
     $("#list").html(`<div class="d-flex justify-content-center"><div class="spinner-border ${UI.loading_spinner_class} m-5" role="status" id="spinner"><span class="sr-only"></span></div></div>`),
     $("#readme_md").hide().html(""),
@@ -423,22 +1220,15 @@ function render_search_result_list() {
         const e = document.querySelectorAll('input[type="checkbox"]:checked')
           , t = [];
         if (0 === e.length)
-            return void alert("Nenhum item selecionado.");
+            return void showErrorModal("Nenhum Item Selecionado", "Por favor, selecione pelo menos um item para baixar.");
         
         e.forEach((e => {
             const n = e.value;
             t.push(n);
         }));
     
-        t.forEach((link) => {
-            const a = document.createElement("a");
-            a.href = link;
-            a.download = "";
-            a.target = "_blank";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        });
+        // Use the new bulk download modal
+        initiateBulkDownload(t);
     }));
 }
 function append_search_result_to_list(e) {
@@ -460,10 +1250,11 @@ function append_search_result_to_list(e) {
                 a = a + Number(l.size);
                 l.size = formatFileSize(l.size);
                 var r = l.fileExtension
-                  , s = UI.second_domain_for_dl ? UI.downloaddomain + l.link : window.location.origin + l.link;
-                html += `<div style="color: ${UI.css_a_tag_color};" gd-type="$item['mimeType']}" class="countitems size_items list-group-item list-group-item-action">${UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + s + '" id="flexCheckDefault">' : ""}`,
+                  , s = UI.second_domain_for_dl ? UI.downloaddomain + l.link : 
+                        (l.link.startsWith('http') ? l.link : window.location.origin + l.link);
+                html += `<div style="color: ${UI.css_a_tag_color};" gd-type="$item['mimeType']}" class="countitems size_items list-group-item list-group-item-action">${UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + s + '" data-name="' + l.name + '" id="flexCheckDefault">' : ""}`,
                 "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${r}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${r}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${r}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${r}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${r}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${r}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${r}|`) >= 0 ? html += pdf_icon : html += file_icon,
-                html += ` <span onclick="onSearchResultItemClick('${l.id}', true)" data-bs-toggle="modal" data-bs-target="#SearchModel">${l.name}</span>${UI.display_download ? `<a href="${s}"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}<span class="badge float-end csize"> ${UI.display_size ? '<span class="badge bg-primary float-end"> ' + l.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + l.modifiedTime + " </span>" : ""}</div>`
+                html += ` <span onclick="onSearchResultItemClick('${l.id}', true)" data-bs-toggle="modal" data-bs-target="#SearchModel">${l.name}</span>${UI.display_download ? `<a href="#" onclick="initiateDownload('${l.name}', '${s}', '${l.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}<span class="badge float-end csize"> ${UI.display_size ? '<span class="badge bg-primary float-end"> ' + l.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + l.modifiedTime + " </span>" : ""}</div>`
             }
         }
         o && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -471,15 +1262,15 @@ function append_search_result_to_list(e) {
         n && (total_size = formatFileSize(a) || "0 Bytes",
         total_items = t.find(".countitems").length,
         total_files = t.find(".size_items").length,
-        0 == total_items ? $("#count").removeClass("d-none").find(".number").text("No Results") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " Itens"),
-        0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Found Nothing") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
+        0 == total_items ? $("#count").removeClass("d-none").find(".number").text("Nenhum resultado") : 1 == total_items ? $("#count").removeClass("d-none").find(".number").text(total_items + " item") : $("#count").removeClass("d-none").find(".number").text(total_items + " Itens"),
+        0 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text("Não foi encontrado nada") : 1 == total_files ? $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivo com tamanho " + total_size) : $("#count").removeClass("d-none").find(".totalsize").text(total_files + " Arquivos com tamanho " + total_size))
     } catch (e) {
         console.log(e)
     }
 }
 function onSearchResultItemClick(e, t) {
     var n = window.current_drive_order
-      , a = "Loading...";
+      , a = "Carregando...";
     $("#SearchModelLabel").html(a);
     var i = `<div class="d-flex justify-content-center"><div class="spinner-border ${UI.loading_spinner_class} m-5" role="status" id="spinner"><span class="sr-only"></span></div>`;
     $("#modal-body-space").html(i);
@@ -499,16 +1290,15 @@ function onSearchResultItemClick(e, t) {
     }
     )).then((function(e) {
         var n = `${e.path}`.replace(new RegExp("#","g"), "%23").replace(new RegExp("\\?","g"), "%3F");
-        a = "Result",
+        a = "Resultado",
         $("#SearchModelLabel").html(a),
-        i = `<a class="btn btn-info" href="${n}${t ? "?a=view" : ""}">Open</a> <a class="btn btn-secondary" href="${n}${t ? "?a=view" : ""}" target="_blank">Open in New Tab</a>`,
+        i = `<a class="btn btn-info" href="${n}${t ? "?a=view" : ""}">Abrir</a> <a class="btn btn-secondary" href="${n}${t ? "?a=view" : ""}" target="_blank">Abrir em nova aba</a>`,
         $("#modal-body-space").html(i)
     }
     )).catch((function(n) {
-        console.log(n);
         a = "Fallback Method",
         $("#SearchModelLabel").html(a),
-        i = `<a class="btn btn-info" href="/fallback?id=${e}&${t ? "a=view" : ""}">Open</a> <a class="btn btn-secondary" href="/fallback?id=${e}&${t ? "a=view" : ""}" target="_blank">Open in New Tab</a>`,
+        i = `<a class="btn btn-info" href="/fallback?id=${e}&${t ? "a=view" : ""}">Abrir</a> <a class="btn btn-secondary" href="/fallback?id=${e}&${t ? "a=view" : ""}" target="_blank">Abrir em nova aba</a>`,
         $("#modal-body-space").html(i)
     }
     ))
@@ -543,7 +1333,6 @@ async function fallback(e, t) {
         return e.json()
     }
     )).then((function(e) {
-        console.log(e);
         var t = e.mimeType
           , a = e.fileExtension;
         const i = ["php", "css", "go", "java", "js", "json", "txt", "sh", "md", "html", "xml", "py", "rb", "c", "cpp", "h", "hpp"]
@@ -557,7 +1346,8 @@ async function fallback(e, t) {
             const d = e.name
               , c = encodeURIComponent(d)
               , p = formatFileSize(e.size)
-              , m = UI.second_domain_for_dl ? UI.downloaddomain + e.link : window.location.origin + e.link
+              , m = UI.second_domain_for_dl ? UI.downloaddomain + e.link : 
+                    (e.link.startsWith('http') ? e.link : window.location.origin + e.link)
               , g = e.id;
             if (t.includes("video") || o.includes(a)) {
                 file_video(d, c, p, e.thumbnailLink ? e.thumbnailLink.replace("s220", "s0") : UI.poster, m, t, g, n)
@@ -603,7 +1393,8 @@ async function file(e) {
             const d = e.name
               , c = encodeURIComponent(d)
               , p = formatFileSize(e.size)
-              , m = UI.second_domain_for_dl ? UI.downloaddomain + e.link : window.location.origin + e.link
+              , m = UI.second_domain_for_dl ? UI.downloaddomain + e.link : 
+                    (e.link.startsWith('http') ? e.link : window.location.origin + e.link)
               , g = e.id;
             if (n.includes("video") || o.includes(a)) {
                 file_video(d, c, p, e.thumbnailLink ? e.thumbnailLink.replace("s220", "s0") : UI.poster, m, n, g, t)
@@ -618,8 +1409,669 @@ async function file(e) {
     ))
 }
 const copyButton = '<button onclick="copyFunction()" onmouseout="outFunc()" class="btn btn-success"> <span class="tooltiptext" id="myTooltip">Copiar</span> </button>';
+
+// Download Progress Modal Functions
+function showDownloadModal(fileName, fileUrl, fileSize) {
+    // Create modal HTML
+    const modalHTML = `
+    <div class="modal fade" id="downloadModal" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="downloadModalLabel">
+                        <i class="bi bi-download me-2"></i>Download
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-arrow-down text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h6 class="mb-2" style="word-break: break-all; word-wrap: break-word; max-width: 100%; overflow-wrap: break-word; hyphens: auto;">${fileName}</h6>
+                    <p class="text-muted mb-3">${fileSize}</p>
+                    
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                             role="progressbar" style="width: 0%" id="downloadProgress"></div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-success" id="progressPercent">0%</div>
+                                <small class="text-muted">Progresso</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-info" id="downloadSpeed">0 KB/s</div>
+                                <small class="text-muted">Velocidade</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-warning" id="downloadSize">0 MB</div>
+                                <small class="text-muted">Baixado</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted" id="downloadStatus">Clique em "Iniciar Download" para começar</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelDownloadBtn" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="startDownloadBtn" disabled>
+                        <i class="bi bi-download me-1"></i>Iniciar Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('downloadModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('downloadModal'));
+    modal.show();
+    
+    // Start countdown only - download will be initiated by user click
+    startDownloadCountdown(fileName, fileUrl, fileSize);
+}
+
+function startDownloadCountdown(fileName, fileUrl, fileSize) {
+    const progressElement = document.getElementById('downloadProgress');
+    const progressPercentElement = document.getElementById('progressPercent');
+    const speedElement = document.getElementById('downloadSpeed');
+    const statusElement = document.getElementById('downloadStatus');
+    const startBtn = document.getElementById('startDownloadBtn');
+    
+    // Hide countdown element and show download ready
+    const countdownElement = document.getElementById('countdown');
+    if (countdownElement) {
+        countdownElement.textContent = '✓';
+        countdownElement.parentElement.querySelector('small').textContent = 'Pronto';
+    }
+    
+    // Enable button immediately
+    startBtn.disabled = false;
+    statusElement.textContent = 'Pronto para download!';
+    
+    // Start download button event - remove any existing listeners first
+    const newStartBtn = document.getElementById('startDownloadBtn');
+    if (newStartBtn) {
+        // Clone the button to remove all event listeners
+        const newBtn = newStartBtn.cloneNode(true);
+        newStartBtn.parentNode.replaceChild(newBtn, newStartBtn);
+        
+        // Add new event listener
+        newBtn.addEventListener('click', () => {
+            startDownload(fileName, fileUrl, fileSize);
+        });
+    }
+    
+    // Add event listener for cancel button
+    const cancelBtn = document.getElementById('cancelDownloadBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            cancelDownload();
+        });
+    }
+}
+
+function startDownload(fileName, fileUrl, fileSize) {
+    const progressElement = document.getElementById('downloadProgress');
+    const progressPercentElement = document.getElementById('progressPercent');
+    const speedElement = document.getElementById('downloadSpeed');
+    const statusElement = document.getElementById('downloadStatus');
+    const startBtn = document.getElementById('startDownloadBtn');
+    
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Baixando...';
+    
+    // Update cancel button to show it can cancel the download
+    const cancelBtn = document.getElementById('cancelDownloadBtn');
+    if (cancelBtn) {
+        cancelBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Cancelar Download';
+        cancelBtn.classList.remove('btn-secondary');
+        cancelBtn.classList.add('btn-danger');
+    }
+    
+    // Real download with progress tracking
+    downloadWithProgress(fileUrl, fileName, (progress, loaded, total, speed) => {
+        // Update progress bar
+        progressElement.style.width = progress + '%';
+        progressPercentElement.textContent = Math.round(progress) + '%';
+        
+        // Update speed
+        if (speed > 0) {
+            speedElement.textContent = formatSpeed(speed);
+        }
+        
+        // Update downloaded size
+        const downloadSizeElement = document.getElementById('downloadSize');
+        if (downloadSizeElement) {
+            downloadSizeElement.textContent = formatFileSize(loaded);
+        }
+        
+        // Update status
+        if (progress < 10) {
+            statusElement.textContent = 'Conectando ao servidor...';
+        } else if (progress < 50) {
+            statusElement.textContent = 'Baixando arquivo...';
+        } else if (progress < 90) {
+            statusElement.textContent = 'Processando dados...';
+        } else if (progress < 100) {
+            statusElement.textContent = 'Finalizando download...';
+        } else {
+            statusElement.textContent = 'Download concluído!';
+            progressElement.classList.remove('progress-bar-animated');
+            progressElement.classList.add('bg-success');
+            
+            // Close modal after 1 second
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('downloadModal'));
+                modal.hide();
+            }, 1000);
+        }
+    }).catch(error => {
+        console.error('Erro no download:', error);
+        
+        if (error.message === 'Download cancelled by user') {
+            statusElement.textContent = 'Download cancelado pelo usuário';
+            progressElement.classList.remove('progress-bar-animated');
+            progressElement.classList.add('bg-warning');
+        } else {
+            statusElement.textContent = 'Erro no download: ' + error.message;
+            progressElement.classList.remove('progress-bar-animated');
+            progressElement.classList.add('bg-danger');
+        }
+        
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Tentar Novamente';
+        
+        // Reset cancel button
+        const cancelBtn = document.getElementById('cancelDownloadBtn');
+        if (cancelBtn) {
+            cancelBtn.innerHTML = 'Cancelar';
+            cancelBtn.classList.remove('btn-danger');
+            cancelBtn.classList.add('btn-secondary');
+        }
+    });
+}
+
+// Global variable to track download cancellation
+let currentDownloadController = null;
+
+// Real download function with progress tracking and cancellation support
+async function downloadWithProgress(url, filename, progressCallback) {
+    // Create AbortController for cancellation
+    const controller = new AbortController();
+    currentDownloadController = controller;
+    
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentLength = response.headers.get('content-length');
+        const total = parseInt(contentLength, 10);
+        let loaded = 0;
+        let lastTime = Date.now();
+        let lastLoaded = 0;
+        let startTime = Date.now();
+        
+        const reader = response.body.getReader();
+        const chunks = [];
+        
+        // Initial progress update
+        progressCallback(0, 0, total, 0);
+        
+        while (true) {
+            // Check if download was cancelled
+            if (controller.signal.aborted) {
+                reader.cancel();
+                throw new Error('Download cancelled by user');
+            }
+            
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+            
+            chunks.push(value);
+            loaded += value.length;
+            
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastTime;
+            
+            // Calculate speed and progress every 200ms for smoother updates
+            if (timeDiff >= 200) {
+                const speed = ((loaded - lastLoaded) / timeDiff) * 1000; // bytes per second
+                const progress = total ? (loaded / total) * 100 : 0;
+                
+                progressCallback(progress, loaded, total, speed);
+                
+                lastTime = currentTime;
+                lastLoaded = loaded;
+            }
+        }
+        
+        // Check if download was cancelled before creating blob
+        if (controller.signal.aborted) {
+            throw new Error('Download cancelled by user');
+        }
+        
+        // Create blob and download
+        const blob = new Blob(chunks);
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        // Final progress update
+        progressCallback(100, loaded, total, 0);
+        
+    } catch (error) {
+        if (error.name === 'AbortError' || error.message === 'Download cancelled by user') {
+            throw new Error('Download cancelled by user');
+        }
+        throw error;
+    } finally {
+        currentDownloadController = null;
+    }
+}
+
+// Format speed for display
+function formatSpeed(bytesPerSecond) {
+    if (bytesPerSecond < 1024) {
+        return Math.round(bytesPerSecond) + ' B/s';
+    } else if (bytesPerSecond < 1024 * 1024) {
+        return Math.round(bytesPerSecond / 1024) + ' KB/s';
+    } else {
+        return Math.round(bytesPerSecond / (1024 * 1024)) + ' MB/s';
+    }
+}
+
+// Format file size for display
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Enhanced download function
+function initiateDownload(fileName, fileUrl, fileSize) {
+    showDownloadModal(fileName, fileUrl, fileSize);
+}
+
+// Cancel download function
+function cancelDownload() {
+    if (currentDownloadController) {
+        currentDownloadController.abort();
+        currentDownloadController = null;
+        
+        // Update UI to show cancellation
+        const statusElement = document.getElementById('downloadStatus');
+        const progressElement = document.getElementById('downloadProgress');
+        const startBtn = document.getElementById('startDownloadBtn');
+        
+        if (statusElement) {
+            statusElement.textContent = 'Download cancelado pelo usuário';
+        }
+        
+        if (progressElement) {
+            progressElement.classList.remove('progress-bar-animated');
+            progressElement.classList.add('bg-warning');
+        }
+        
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Iniciar Download';
+        }
+    }
+}
+
+// Bulk download function with modal
+function initiateBulkDownload(links) {
+    if (links.length === 0) {
+        showErrorModal("Nenhum Item Selecionado", "Por favor, selecione pelo menos um item para baixar.");
+        return;
+    }
+    
+    // Create array with both links and file names
+    const filesWithNames = links.map(link => {
+        const checkbox = document.querySelector(`input[value="${link}"]`);
+        const fileName = checkbox ? checkbox.getAttribute('data-name') : 'Arquivo Desconhecido';
+        return {
+            link: link,
+            name: fileName
+        };
+    });
+    
+    showBulkDownloadModal(filesWithNames);
+}
+
+// Bulk download modal
+function showBulkDownloadModal(filesWithNames) {
+    const totalFiles = filesWithNames.length;
+    const modalHTML = `
+    <div class="modal fade" id="bulkDownloadModal" tabindex="-1" aria-labelledby="bulkDownloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="bulkDownloadModalLabel">
+                        <i class="bi bi-download me-2"></i>Download em Massa
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-files text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h6 class="mb-2">${totalFiles} arquivo${totalFiles > 1 ? 's' : ''} selecionado${totalFiles > 1 ? 's' : ''}</h6>
+                    <p class="text-muted mb-3">Os arquivos serão baixados sequencialmente</p>
+                    
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                             role="progressbar" style="width: 0%" id="bulkDownloadProgress"></div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-success" id="bulkProgressPercent">0%</div>
+                                <small class="text-muted">Progresso</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-info" id="bulkCurrentFile">0/${totalFiles}</div>
+                                <small class="text-muted">Arquivo Atual</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0 text-warning" id="bulkDownloadSpeed">0 KB/s</div>
+                                <small class="text-muted">Velocidade</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted" id="bulkDownloadStatus">Clique em "Iniciar Downloads" para começar</small>
+                    </div>
+                    
+                    <div class="mt-3" id="bulkFileList" style="max-height: 200px; overflow-y: auto; text-align: left;">
+                        <h6>Arquivos selecionados:</h6>
+                        <ul class="list-group list-group-flush">
+                            ${filesWithNames.map((file, index) => {
+                                return `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span style="max-width: 70%; word-break: break-all; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; display: inline-block;">${file.name}</span>
+                                    <span class="badge bg-secondary" id="file-status-${index}">Pendente</span>
+                                </li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="startBulkDownloadBtn">
+                        <i class="bi bi-download me-1"></i>Iniciar Downloads
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('bulkDownloadModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('bulkDownloadModal'));
+    modal.show();
+    
+    // Add event listener for start button
+    document.getElementById('startBulkDownloadBtn').addEventListener('click', () => {
+        startBulkDownload(filesWithNames);
+    });
+}
+
+// Show error modal
+function showErrorModal(title, message) {
+    const modalHtml = `
+        <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="errorModalLabel">
+                            <i class="bi bi-exclamation-triangle me-2"></i>${title}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                        <p class="text-center mb-0">${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('errorModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+    modal.show();
+}
+
+// Start bulk download
+async function startBulkDownload(filesWithNames) {
+    const progressElement = document.getElementById('bulkDownloadProgress');
+    const progressPercentElement = document.getElementById('bulkProgressPercent');
+    const currentFileElement = document.getElementById('bulkCurrentFile');
+    const speedElement = document.getElementById('bulkDownloadSpeed');
+    const statusElement = document.getElementById('bulkDownloadStatus');
+    const startBtn = document.getElementById('startBulkDownloadBtn');
+    
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Baixando...';
+    
+    const totalFiles = filesWithNames.length;
+    let completedFiles = 0;
+    let totalDownloaded = 0;
+    let startTime = Date.now();
+    
+    for (let i = 0; i < filesWithNames.length; i++) {
+        const file = filesWithNames[i];
+        const link = file.link;
+        const fileName = file.name;
+        
+        // Update current file status
+        currentFileElement.textContent = `${i + 1}/${totalFiles}`;
+        statusElement.textContent = `Baixando: ${fileName}`;
+        
+        // Update file status in list
+        const fileStatusElement = document.getElementById(`file-status-${i}`);
+        if (fileStatusElement) {
+            fileStatusElement.textContent = 'Baixando';
+            fileStatusElement.className = 'badge bg-warning';
+        }
+        
+        try {
+            // Download single file with progress tracking
+            await downloadSingleFileWithProgress(link, fileName, (progress, loaded, total, speed) => {
+                // Update progress for current file
+                const fileProgress = (i / totalFiles) * 100 + (progress / totalFiles);
+                progressElement.style.width = fileProgress + '%';
+                progressPercentElement.textContent = Math.round(fileProgress) + '%';
+                
+                if (speed > 0) {
+                    speedElement.textContent = formatSpeed(speed);
+                }
+                
+                totalDownloaded = loaded;
+            });
+            
+            completedFiles++;
+            
+            // Update file status to completed
+            if (fileStatusElement) {
+                fileStatusElement.textContent = 'Concluído';
+                fileStatusElement.className = 'badge bg-success';
+            }
+            
+        } catch (error) {
+            console.error('Erro ao baixar arquivo:', fileName, error);
+            
+            // Update file status to error
+            if (fileStatusElement) {
+                fileStatusElement.textContent = 'Erro';
+                fileStatusElement.className = 'badge bg-danger';
+            }
+        }
+    }
+    
+    // Final update
+    progressElement.style.width = '100%';
+    progressPercentElement.textContent = '100%';
+    statusElement.textContent = `Download concluído! ${completedFiles}/${totalFiles} arquivos baixados com sucesso.`;
+    progressElement.classList.remove('progress-bar-animated');
+    progressElement.classList.add('bg-success');
+    
+    // Close modal after 3 seconds
+    setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkDownloadModal'));
+        modal.hide();
+    }, 3000);
+}
+
+// Download single file with progress tracking
+async function downloadSingleFileWithProgress(url, filename, progressCallback) {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const total = parseInt(contentLength, 10);
+    let loaded = 0;
+    let lastTime = Date.now();
+    let lastLoaded = 0;
+    
+    const reader = response.body.getReader();
+    const chunks = [];
+    
+    while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        chunks.push(value);
+        loaded += value.length;
+        
+        const currentTime = Date.now();
+        const timeDiff = currentTime - lastTime;
+        
+        // Calculate speed and progress every 200ms
+        if (timeDiff >= 200) {
+            const speed = ((loaded - lastLoaded) / timeDiff) * 1000; // bytes per second
+            const progress = total ? (loaded / total) * 100 : 0;
+            
+            progressCallback(progress, loaded, total, speed);
+            
+            lastTime = currentTime;
+            lastLoaded = loaded;
+        }
+    }
+    
+    // Create blob and download
+    const blob = new Blob(chunks);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    window.URL.revokeObjectURL(downloadUrl);
+    
+    // Final progress update
+    progressCallback(100, loaded, total, 0);
+}
+
+// Função para copiar link para clipboard
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.select();
+        element.setSelectionRange(0, 99999); // Para mobile
+        document.execCommand('copy');
+        
+        // Feedback visual
+        const button = event.target.closest('button');
+        if (button) {
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+    }
+}
 function generateCopyFileBox(e, t) {
-    return `<div class="row justify-content-center mt-3" id="copyresult">\n  <div class="col-12 col-md-8" id="copystatus"><div class='alert alert-secondary' role='alert'> Send Request to Copy File </div></div>\n  <div class="col-12 col-md-8"> <input id="user_folder_id" type="text" class="form-control" placeholder="Enter Your Folder ID to Copy this File" value="${t}" required></div>\n  <div class="col-12 col-md-8 mt-2"> <button id="copy_file" onclick="copyFile('${e}')" style="margin-top: 5px;" class="btn btn-danger btn-block">Copy File to Own Drive</button></div>\n  </div>`
+    return `<div class="row justify-content-center mt-3" id="copyresult">\n  <div class="col-12 col-md-8" id="copystatus"><div class='alert alert-secondary' role='alert'> Enviar solicitação para copiar arquivo </div></div>\n  <div class="col-12 col-md-8"> <input id="user_folder_id" type="text" class="form-control" placeholder="Enter Your Folder ID to Copy this File" value="${t}" required></div>\n  <div class="col-12 col-md-8 mt-2"> <button id="copy_file" onclick="copyFile('${e}')" style="margin-top: 5px;" class="btn btn-danger btn-block">Copy File to Own Drive</button></div>\n  </div>`
 }
 function file_others(e, t, n, a, i, o) {
     var l = window.location.pathname.split("/");
@@ -627,11 +2079,187 @@ function file_others(e, t, n, a, i, o) {
     for (var s = "", d = "", c = 0; c < l.length; c++) {
         var p = l[c];
         c == l.length - 1 ? d += p + "?a=view" : d += p + "/",
-        p.length > 15 && (p = (p = decodeURIComponent(p)).substring(0, 10) + "..."),
+        p.length > 30 && (p = (p = decodeURIComponent(p)).substring(0, 25) + "..."),
         "" == p && (p = "Home"),
         s += '<a href="' + d + '" class="breadcrumb-item">' + p + "</a>"
     }
-    var m = `\n    <div class="container"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n            <div class="card text-center">\n            <div class="card-body text-center">\n              <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n            </div>\n            <div class="card-body">\n            <div class="input-group mb-4">\n              <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n            </div>\n            <div class="card-text text-center">\n            <div class="btn-group text-center">\n                <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                  <span class="sr-only"></span>\n                </button>\n                <div class="dropdown-menu">\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                  <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n                </div>\n            </div>\n            ` + copyButton + r + "\n            </div>\n            <br></div>";
+    
+    // Determinar ícone baseado na extensão do arquivo
+    const fileExtension = e.split('.').pop().toLowerCase();
+    let fileIcon = 'bi-file-earmark';
+    let fileType = 'Arquivo';
+    
+    switch(fileExtension) {
+        case 'zip':
+        case 'rar':
+        case '7z':
+        case 'tar':
+        case 'gz':
+            fileIcon = 'bi-file-earmark-zip';
+            fileType = 'Arquivo Compactado';
+            break;
+        case 'exe':
+        case 'msi':
+        case 'deb':
+        case 'rpm':
+            fileIcon = 'bi-file-earmark-binary';
+            fileType = 'Executável';
+            break;
+        case 'doc':
+        case 'docx':
+            fileIcon = 'bi-file-earmark-word';
+            fileType = 'Documento Word';
+            break;
+        case 'xls':
+        case 'xlsx':
+            fileIcon = 'bi-file-earmark-excel';
+            fileType = 'Planilha Excel';
+            break;
+        case 'ppt':
+        case 'pptx':
+            fileIcon = 'bi-file-earmark-ppt';
+            fileType = 'Apresentação PowerPoint';
+            break;
+        default:
+            fileIcon = 'bi-file-earmark';
+            fileType = 'Arquivo';
+    }
+    
+    var m = `
+    <div class="container-fluid"><br>
+      <style>
+        .path-navigation-container {
+          margin-bottom: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(0,0,0,0.02);
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .path-navigation-container {
+          background: rgba(255,255,255,0.05);
+          border-left-color: #0d6efd;
+        }
+        .path-navigation-container:hover {
+          background: rgba(0,0,0,0.04);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .path-navigation-container:hover {
+          background: rgba(255,255,255,0.08);
+        }
+        .breadcrumb {
+          margin-bottom: 0;
+          background: transparent;
+          padding: 0;
+        }
+        .breadcrumb-item a {
+          text-decoration: none;
+          color: #007bff;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+        [data-theme="dark"] .breadcrumb-item a {
+          color: #0d6efd;
+        }
+        .breadcrumb-item a:hover {
+          color: #0056b3;
+          transform: translateX(2px);
+        }
+        [data-theme="dark"] .breadcrumb-item a:hover {
+          color: #3d8bfd;
+        }
+        .breadcrumb-item.active {
+          color: #6c757d;
+          font-weight: 500;
+        }
+        [data-theme="dark"] .breadcrumb-item.active {
+          color: #adb5bd;
+        }
+      </style>
+      <div class="path-navigation-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">
+            <li class="breadcrumb-item">
+              <a href="/">
+                <i class="bi bi-house-door me-1"></i>
+                <span>Início</span>
+              </a>
+            </li>
+            ${s}
+          </ol>
+        </nav>
+      </div>
+      
+      <!-- File Viewer Container -->
+      <div class="card">
+        <!-- File Toolbar -->
+        <div class="card-header bg-primary text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0"><i class="bi ${fileIcon} me-2"></i>${e}</h5>
+              <small>${n} • ${fileType}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end align-items-center">
+                <!-- Download Button -->
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="initiateDownload('${e}', '${a}', '${n}')" title="Baixar arquivo">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- File Content -->
+        <div class="card-body p-0" style="background-color: #f8f9fa;">
+          <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+            <div class="text-center">
+              <i class="bi ${fileIcon} text-muted" style="font-size: 4rem;"></i>
+              <p class="text-muted mt-3">${fileType}</p>
+              <p class="text-muted">Este tipo de arquivo não pode ser visualizado no navegador</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- File Actions -->
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="text" class="form-control" id="dlurl" value="${a}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('dlurl')" title="Copiar link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-primary" onclick="initiateDownload('${e}', '${a}', '${n}')" title="Baixar arquivo">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Downloaders</h6></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="${a}" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>Google Drive</a></li>
+                  </ul>
+                </div>
+                ${r}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
     $("#content").html(m)
 }
 function file_code(name, encodedName, size, downloadUrl, id, rootId) {
@@ -648,44 +2276,162 @@ function file_code(name, encodedName, size, downloadUrl, id, rootId) {
         "md": "Markdown",
     };
     var ext = name.split('.').pop().toLowerCase();
-    var url = UI.second_domain_for_dl ? UI.downloaddomain + downloadUrl : window.location.origin + downloadUrl;
+    var url = UI.second_domain_for_dl ? UI.downloaddomain + downloadUrl : 
+              (downloadUrl.startsWith('http') ? downloadUrl : window.location.origin + downloadUrl);
+    
+    // Generate breadcrumb
+    var l = window.location.pathname.split("/");
+    var s = "", d = "";
+    for (var c = 0; c < l.length; c++) {
+        var p = l[c];
+        c == l.length - 1 ? d += p + "?a=view" : d += p + "/",
+        p.length > 30 && (p = (p = decodeURIComponent(p)).substring(0, 25) + "..."),
+        "" == p && (p = "Home"),
+        s += '<li class="breadcrumb-item"><a href="' + d + '">' + p + "</a></li>"
+    }
     
     $.get(downloadUrl, function(data) {
         try {
             var size = formatFileSize(size);
-            var content = `
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism-twilight.css" integrity="sha256-Rl83wx+fN2p2ioYpdvpWxuhAbxj+/7IwaZrKQBu/KQE=" crossorigin="anonymous">
-<div class="container"><br>
-<div class="card text-center">
-<div class="card-body text-center">
-  <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${name}<br>${size}</div>
-<div>
-<pre class="line-numbers language-${type[ext] || 'Text'}" style="white-space: pre-wrap;"><code id="editor">${$('<div/>').text(data).html()}</code></pre>
-</div>
-</div>
-<div class="card-body">
-<div class="input-group mb-4">
-  <div class="input-group-prepend">
-    <span class="input-group-text" id="">Full URL</span>
-  </div>
-  <input type="text" class="form-control" id="dlurl" value="${url}">
-</div>
-  <div class="card-text text-center">
-  ${UI.display_drive_link ? '<a type="button" class="btn btn-info" href="https://drive.google.com/file/d/'+ id +'/view" id ="file_drive_link" target="_blank">GD Link</a>': ''}
-  <div class="btn-group text-center">
-      <a href="${url}" type="button" class="btn btn-primary">Download</a>
-      <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="sr-only"></span>
-      </button>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM (Free)</a>
-        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM (Lite)</a>
-        <a class="dropdown-item" href="intent:${url}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${encodedName};end">1DM+ (Plus)</a>
-      </div>
-  </div>
-  <button onclick="copyFunction()" onmouseout="outFunc()" class="btn btn-success"> <span class="tooltiptext" id="myTooltip">Copy</span> </button></div><br></div>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.js" integrity="sha256-fZOd7N/oofoKcO92RzxvC0wMm+EvsKyRT4nmcmQbgzU=" crossorigin="anonymous"></script>
-`;
+            var content = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism-twilight.css" integrity="sha256-Rl83wx+fN2p2ioYpdvpWxuhAbxj+/7IwaZrKQBu/KQE=" crossorigin="anonymous">' +
+'<div class="container-fluid"><br>' +
+'  <style>' +
+'    .path-navigation-container {' +
+'      margin-bottom: 1rem;' +
+'      padding: 0.75rem 1rem;' +
+'      background: rgba(0,0,0,0.02);' +
+'      border-radius: 8px;' +
+'      border-left: 4px solid #007bff;' +
+'      transition: all 0.3s ease;' +
+'    }' +
+'    [data-theme="dark"] .path-navigation-container {' +
+'      background: rgba(255,255,255,0.05);' +
+'      border-left-color: #0d6efd;' +
+'    }' +
+'    .path-navigation-container:hover {' +
+'      background: rgba(0,0,0,0.04);' +
+'      box-shadow: 0 2px 4px rgba(0,0,0,0.05);' +
+'    }' +
+'    [data-theme="dark"] .path-navigation-container:hover {' +
+'      background: rgba(255,255,255,0.08);' +
+'    }' +
+'    .breadcrumb {' +
+'      margin-bottom: 0;' +
+'      background: transparent;' +
+'      padding: 0;' +
+'    }' +
+'    .breadcrumb-item a {' +
+'      text-decoration: none;' +
+'      color: #007bff;' +
+'      transition: all 0.2s ease;' +
+'      display: inline-flex;' +
+'      align-items: center;' +
+'    }' +
+'    [data-theme="dark"] .breadcrumb-item a {' +
+'      color: #0d6efd;' +
+'    }' +
+'    .breadcrumb-item a:hover {' +
+'      color: #0056b3;' +
+'      transform: translateX(2px);' +
+'    }' +
+'    [data-theme="dark"] .breadcrumb-item a:hover {' +
+'      color: #3d8bfd;' +
+'    }' +
+'    .breadcrumb-item.active {' +
+'      color: #6c757d;' +
+'      font-weight: 500;' +
+'    }' +
+'    [data-theme="dark"] .breadcrumb-item.active {' +
+'      color: #adb5bd;' +
+'    }' +
+'  </style>' +
+'  <div class="path-navigation-container">' +
+'    <nav aria-label="breadcrumb">' +
+'      <ol class="breadcrumb" style="--bs-breadcrumb-divider: \'›\'; --bs-breadcrumb-item-padding-x: 0.5rem;">' +
+'        <li class="breadcrumb-item">' +
+'          <a href="/">' +
+'            <i class="bi bi-house-door me-1"></i>' +
+'            <span>Início</span>' +
+'          </a>' +
+'        </li>' +
+        s +
+'      </ol>' +
+'    </nav>' +
+'  </div>' +
+'  <div class="card">' +
+'    <div class="card-header bg-primary text-white">' +
+'      <div class="row align-items-center">' +
+'        <div class="col-md-6">' +
+'          <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>' + name + '</h5>' +
+'          <small>' + size + ' • ' + (type[ext] || 'Text') + '</small>' +
+'        </div>' +
+'        <div class="col-md-6">' +
+'          <div class="d-flex justify-content-end align-items-center">' +
+'            <button id="copy-code" class="btn btn-outline-light btn-sm" title="Copiar código">' +
+'              <i class="bi bi-clipboard"></i>' +
+'            </button>' +
+'          </div>' +
+'        </div>' +
+'      </div>' +
+'    </div>' +
+'    <div class="card-body p-0" style="background-color: #2d3748;">' +
+'      <div id="code-container" style="max-height: 600px; overflow: auto;">' +
+'        <pre class="line-numbers language-' + (type[ext] || 'Text') + '" style="white-space: pre-wrap; margin: 0; padding: 1rem; background: transparent;"><code id="editor">' + $('<div/>').text(data).html() + '</code></pre>' +
+'      </div>' +
+'    </div>' +
+'    <div class="card-footer">' +
+'      <div class="row">' +
+'        <div class="col-md-8">' +
+'          <div class="input-group">' +
+'            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>' +
+'            <input type="text" class="form-control" id="dlurl" value="' + url + '" readonly>' +
+'            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard(\'dlurl\')" title="Copiar link">' +
+'              <i class="bi bi-clipboard"></i>' +
+'            </button>' +
+'          </div>' +
+'        </div>' +
+'        <div class="col-md-4">' +
+'          <div class="d-flex justify-content-end gap-2">' +
+'            <button class="btn btn-primary" title="Baixar arquivo" onclick="initiateDownload(\'' + name + '\', \'' + url + '\', \'' + size + '\')">' +
+'              <i class="bi bi-download me-1"></i>Baixar' +
+'            </button>' +
+'            <div class="dropdown">' +
+'              <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">' +
+'                <i class="bi bi-gear"></i>' +
+'              </button>' +
+'              <ul class="dropdown-menu">' +
+'                <li><h6 class="dropdown-header">Downloaders</h6></li>' +
+'                <li><a class="dropdown-item" href="intent:' + url + '#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=' + encodedName + ';end"><i class="bi bi-download me-2"></i>1DM (Free)</a></li>' +
+'                <li><a class="dropdown-item" href="intent:' + url + '#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=' + encodedName + ';end"><i class="bi bi-download me-2"></i>1DM (Lite)</a></li>' +
+'                <li><a class="dropdown-item" href="intent:' + url + '#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=' + encodedName + ';end"><i class="bi bi-download me-2"></i>1DM+ (Plus)</a></li>' +
+                (UI.display_drive_link ? '<li><hr class="dropdown-divider"></li><li><a class="dropdown-item" href="https://drive.google.com/file/d/' + id + '/view" target="_blank"><i class="bi bi-google me-2"></i>Google Drive</a></li>' : '') +
+'              </ul>' +
+'            </div>' +
+'            <button onclick="copyFunction()" onmouseout="outFunc()" class="btn btn-success"> <span class="tooltiptext" id="myTooltip">Copiar</span> </button>' +
+'          </div>' +
+'        </div>' +
+'      </div>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+'<script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/prism.js" integrity="sha256-fZOd7N/oofoKcO92RzxvC0wMm+EvsKyRT4nmcmQbgzU=" crossorigin="anonymous"></script>' +
+'<script>' +
+'  document.getElementById("copy-code").addEventListener("click", function() {' +
+'    const code = document.getElementById("editor").textContent;' +
+'    navigator.clipboard.writeText(code).then(function() {' +
+'      const btn = document.getElementById("copy-code");' +
+'      const originalHTML = btn.innerHTML;' +
+'      btn.innerHTML = "<i class=\\"bi bi-check\\"></i>";' +
+'      btn.classList.remove("btn-outline-light");' +
+'      btn.classList.add("btn-success");' +
+'      setTimeout(() => {' +
+'        btn.innerHTML = originalHTML;' +
+'        btn.classList.remove("btn-success");' +
+'        btn.classList.add("btn-outline-light");' +
+'      }, 2000);' +
+'    });' +
+'  });' +
+'</script>';
         } catch (err) {
             var content = `
 <div class="container"><br>
@@ -719,14 +2465,14 @@ function file_code(name, encodedName, size, downloadUrl, id, rootId) {
         $('#content').html(content);
     });
 }
-function file_video(e, t, n, a, i, o, l, r) {
+function file_video_old(e, t, n, a, i, o, l, r) {
     var s = btoa(i)
       , d = window.location.pathname.split("/");
     const c = UI.allow_file_copy ? generateCopyFileBox(l, r) : "";
     for (var p = "", m = "", g = 0; g < d.length; g++) {
         var f = d[g];
         g == d.length - 1 ? m += f + "?a=view" : m += f + "/",
-        f.length > 15 && (f = (f = decodeURIComponent(f)).substring(0, 10) + "..."),
+        f.length > 30 && (f = (f = decodeURIComponent(f)).substring(0, 25) + "..."),
         "" == f && (f = "Home"),
         p += '<a href="' + m + '" class="breadcrumb-item">' + f + "</a>"
     }
@@ -740,32 +2486,455 @@ function file_video(e, t, n, a, i, o, l, r) {
     player_css = "https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css") : "jwplayer" == player_config.player && (v = '<div id="player"></div>',
     player_js = "https://content.jwplatform.com/libraries/IDzF9Zmk.js",
     player_css = ""));
-    var u = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${p}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>${v}</div>\n        </br>\n        ${UI.disable_video_download ? "" : `\n          <div class="card-body">\n          <div class="input-group mb-4">\n          <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="btn-group text-center">\n              <a href="${i}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n              <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n              <a class="dropdown-item" href="iina://weblink?url=${i}">IINA</a>\n              <a class="dropdown-item" href="potplayer://${i}">PotPlayer</a>\n              <a class="dropdown-item" href="vlc://${i}">VLC Mobile</a>\n              <a class="dropdown-item" href="${i}">VLC Desktop</a>\n              <a class="dropdown-item" href="nplayer-${i}">nPlayer</a>\n              <a class="dropdown-item" href="intent://${i}#Intent;type=video/any;package=is.xyz.mpv;scheme=https;end;">mpv-android</a>\n              <a class="dropdown-item" href="mpv://${s}">mpv x64</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end">MX Player (Free)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end">MX Player (Pro)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n          </div>\n          ` + copyButton + c + "\n\n          </div>\n          </div>\n          "}\n      </div>\n    </div>\n  `;
+    var u = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${p}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>${v}</div>\n        </br>\n        ${UI.disable_video_download ? "" : `\n          <div class="card-body">\n          <div class="input-group mb-4">\n          <input type="text" class="form-control" id="dlurl" value="${i}" readonly>\n          </div>\n          <div class="btn-group text-center">\n              <button type="button" class="btn btn-primary" onclick="initiateDownload('${e}', '${i}', '${n}')">Baixar</button>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n              <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n              <a class="dropdown-item" href="iina://weblink?url=${i}">IINA</a>\n              <a class="dropdown-item" href="potplayer://${i}">PotPlayer</a>\n              <a class="dropdown-item" href="vlc://${i}">VLC Mobile</a>\n              <a class="dropdown-item" href="${i}">VLC Desktop</a>\n              <a class="dropdown-item" href="nplayer-${i}">nPlayer</a>\n              <a class="dropdown-item" href="intent://${i}#Intent;type=video/any;package=is.xyz.mpv;scheme=https;end;">mpv-android</a>\n              <a class="dropdown-item" href="mpv://${s}">mpv x64</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end">MX Player (Free)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end">MX Player (Pro)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n              <a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n          </div>\n          ` + copyButton + c + "\n\n          </div>\n          </div>\n          "}\n      </div>\n    </div>\n  `;
     $("#content").html(u);
     var h = document.createElement("script");
     h.src = player_js,
     h.onload = function() {
         if ("plyr" == player_config.player) {
-            new Plyr("#player")
+            const player = new Plyr("#player", {
+                controls: [
+                    'play-large',
+                    'restart',
+                    'rewind',
+                    'play',
+                    'fast-forward',
+                    'progress',
+                    'current-time',
+                    'duration',
+                    'mute',
+                    'volume',
+                    'settings',
+                    'fullscreen'
+                ],
+                settings: ['quality', 'speed'],
+                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] }
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    player.fullscreen.enter();
+                });
+            }
+            
         } else if ("videojs" == player_config.player) {
-            new videojs("vplayer", {
-				playbackRates: [0.5, 1, 1.5, 2]
-			  })
+            const player = new videojs("vplayer", {
+                playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+                fluid: true,
+                responsive: true,
+                controls: true,
+                preload: 'auto'
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    if (player.isFullscreen()) {
+                        player.exitFullscreen();
+                    } else {
+                        player.requestFullscreen();
+                    }
+                });
+            }
+            
         } else if ("dplayer" == player_config.player) {
-            new DPlayer({
+            const dp = new DPlayer({
                 container: document.getElementById("player-container"),
-                screenshot: !0,
+                screenshot: true,
                 video: {
                     url: i,
                     pic: a,
                     thumbnails: a
                 }
-            })
-        } else
-            "jwplayer" == player_config.player && jwplayer("player").setup({
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    dp.fullScreen.request('browser');
+                });
+            }
+            
+        } else if ("jwplayer" == player_config.player) {
+            jwplayer("player").setup({
                 file: i,
                 type: o,
-                autostart: !1,
+                autostart: false,
+                image: a,
+                width: "100%",
+                aspectratio: "16:9",
+                title: e,
+                description: "nuvem.me",
+                tracks: [{
+                    file: i,
+                    kind: "captions",
+                    label: "Default",
+                    default: true
+                }],
+                captions: {
+                    color: "#f3f378",
+                    fontSize: 14,
+                    backgroundOpacity: 50,
+                    edgeStyle: "raised"
+                }
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    jwplayer("player").setFullscreen(true);
+                });
+            }
+        }
+        
+        // Download button functionality
+        const downloadBtn = document.getElementById('download-video');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                // Get video filename from URL
+                const videoFileName = i.split('/').pop() || 'video.mp4';
+                // Use the download modal
+                initiateDownload(videoFileName, i, n);
+            });
+        }
+    }
+    ,
+    document.head.appendChild(h);
+    var y = document.createElement("link");
+    y.href = player_css,
+    y.rel = "stylesheet",
+    document.head.appendChild(y)
+}
+
+function file_video(e, t, n, a, i, o, l, r) {
+    var s = btoa(i)
+      , d = window.location.pathname.split("/");
+    const c = UI.allow_file_copy ? generateCopyFileBox(l, r) : "";
+    for (var p = "", m = "", g = 0; g < d.length; g++) {
+        var f = d[g];
+        g == d.length - 1 ? m += f + "?a=view" : m += f + "/",
+        f.length > 30 && (f = (f = decodeURIComponent(f)).substring(0, 25) + "..."),
+        "" == f && (f = "Home"),
+        p += '<a href="' + m + '" class="breadcrumb-item">' + f + "</a>"
+    }
+    
+    let v;
+    UI.disable_player || ("plyr" == player_config.player ? (v = `<video id="player" playsinline controls data-poster="${a}">
+      <source src="${i}" type="video/mp4" />
+      <source src="${i}" type="video/webm" />
+        </video>`,
+    "/plyr.polyfilled.js",
+    player_css = "https://cdn.plyr.io/" + player_config.plyr_io_version + "/plyr.css") : "videojs" == player_config.player ? (v = `<video id="vplayer" poster="${a}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">
+      <source src="${i}" type="video/mp4" />
+      <source src="${i}" type="video/webm" />
+      <source src="${i}" type="video/avi" />
+    </video>`,
+    player_js = "https://vjs.zencdn.net/" + player_config.videojs_version + "/video.js",
+    player_css = "https://vjs.zencdn.net/" + player_config.videojs_version + "/video-js.css") : "dplayer" == player_config.player ? (v = '<div id="player-container"></div>',
+    player_js = "https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js",
+    player_css = "https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css") : "jwplayer" == player_config.player && (v = '<div id="player"></div>',
+    player_js = "https://content.jwplatform.com/libraries/IDzF9Zmk.js",
+    player_css = ""));
+    
+    var u = `
+    <div class="container-fluid"><br>
+      <style>
+        .path-navigation-container {
+          margin-bottom: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(0,0,0,0.02);
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .path-navigation-container {
+          background: rgba(255,255,255,0.05);
+          border-left-color: #0d6efd;
+        }
+        .path-navigation-container:hover {
+          background: rgba(0,0,0,0.04);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .path-navigation-container:hover {
+          background: rgba(255,255,255,0.08);
+        }
+        .breadcrumb {
+          margin-bottom: 0;
+          background: transparent;
+          padding: 0;
+        }
+        .breadcrumb-item a {
+          text-decoration: none;
+          color: #007bff;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+        [data-theme="dark"] .breadcrumb-item a {
+          color: #0d6efd;
+        }
+        .breadcrumb-item a:hover {
+          color: #0056b3;
+          transform: translateX(2px);
+        }
+        [data-theme="dark"] .breadcrumb-item a:hover {
+          color: #3d8bfd;
+        }
+        .breadcrumb-item.active {
+          color: #6c757d;
+          font-weight: 500;
+        }
+        [data-theme="dark"] .breadcrumb-item.active {
+          color: #adb5bd;
+        }
+      </style>
+      <div class="path-navigation-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">
+            <li class="breadcrumb-item">
+              <a href="/">
+                <i class="bi bi-house-door me-1"></i>
+                <span>Início</span>
+              </a>
+            </li>
+            ${p}
+          </ol>
+        </nav>
+      </div>
+      
+      <!-- Video Player Container -->
+      <div class="card">
+        <!-- Video Header -->
+        <div class="card-header bg-primary text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>${e}</h5>
+              <small>${n}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end align-items-center">
+                <!-- Fullscreen Toggle -->
+                <button id="fullscreen-video" class="btn btn-outline-light btn-sm" title="Tela cheia">
+                  <i class="bi bi-fullscreen"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Video Player -->
+        <div class="card-body p-0" style="background-color: #000;">
+          <div id="video-container" class="d-flex justify-content-center" style="min-height: 500px;">
+            <div class="video-wrapper" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background: #000;">
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                ${v}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Video Actions -->
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="text" class="form-control" id="dlurl" value="${i}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('dlurl')" title="Copiar link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-primary" title="Baixar vídeo" onclick="initiateDownload('${e}', '${i}', '${n}')">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Players Desktop</h6></li>
+                    <li><a class="dropdown-item" href="iina://weblink?url=${i}"><i class="bi bi-play-circle me-2"></i>IINA</a></li>
+                    <li><a class="dropdown-item" href="potplayer://${i}"><i class="bi bi-play-circle me-2"></i>PotPlayer</a></li>
+                    <li><a class="dropdown-item" href="vlc://${i}"><i class="bi bi-play-circle me-2"></i>VLC Desktop</a></li>
+                    <li><a class="dropdown-item" href="mpv://${s}"><i class="bi bi-play-circle me-2"></i>mpv x64</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Players Mobile</h6></li>
+                    <li><a class="dropdown-item" href="vlc://${i}"><i class="bi bi-phone me-2"></i>VLC Mobile</a></li>
+                    <li><a class="dropdown-item" href="nplayer-${i}"><i class="bi bi-phone me-2"></i>nPlayer</a></li>
+                    <li><a class="dropdown-item" href="intent://${i}#Intent;type=video/any;package=is.xyz.mpv;scheme=https;end;"><i class="bi bi-phone me-2"></i>mpv-android</a></li>
+                    <li><a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end"><i class="bi bi-phone me-2"></i>MX Player (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${i}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end"><i class="bi bi-phone me-2"></i>MX Player (Pro)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Downloaders</h6></li>
+                    <li><a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end"><i class="bi bi-download me-2"></i>1DM (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${i}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end"><i class="bi bi-download me-2"></i>1DM (Lite)</a></li>
+                    <li><a class="dropdown-item" href="intent://${i}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end"><i class="bi bi-download me-2"></i>1DM+ (Plus)</a></li>
+                  </ul>
+                </div>
+                ${copyButton}${c}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <style>
+      .video-wrapper {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      
+      .card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+      }
+      
+      .card-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .dropdown-menu {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      
+      .dropdown-header {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .dropdown-item {
+        padding: 0.5rem 1rem;
+      }
+      
+      .dropdown-item i {
+        width: 16px;
+        text-align: center;
+      }
+      
+      @media (max-width: 768px) {
+        .card-header .row {
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .card-header .col-md-6:last-child {
+          justify-content: center !important;
+        }
+      }
+      
+      /* Video player customizations */
+      .video-js {
+        border-radius: 8px;
+      }
+      
+      .plyr {
+        border-radius: 8px;
+      }
+      
+      #player-container {
+        border-radius: 8px;
+        overflow: hidden;
+      }
+    </style>
+  `;
+    $("#content").html(u);
+    
+    // Video player functionality
+    var h = document.createElement("script");
+    h.src = player_js,
+    h.onload = function() {
+        if ("plyr" == player_config.player) {
+            const player = new Plyr("#player", {
+                controls: [
+                    'play-large',
+                    'restart',
+                    'rewind',
+                    'play',
+                    'fast-forward',
+                    'progress',
+                    'current-time',
+                    'duration',
+                    'mute',
+                    'volume',
+                    'settings',
+                    'fullscreen'
+                ],
+                settings: ['quality', 'speed'],
+                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] }
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    player.fullscreen.enter();
+                });
+            }
+            
+        } else if ("videojs" == player_config.player) {
+            const player = new videojs("vplayer", {
+                playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+                fluid: true,
+                responsive: true,
+                controls: true,
+                preload: 'auto'
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    if (player.isFullscreen()) {
+                        player.exitFullscreen();
+                    } else {
+                        player.requestFullscreen();
+                    }
+                });
+            }
+            
+        } else if ("dplayer" == player_config.player) {
+            const dp = new DPlayer({
+                container: document.getElementById("player-container"),
+                screenshot: true,
+                video: {
+                    url: i,
+                    pic: a,
+                    thumbnails: a
+                }
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    dp.fullScreen.request('browser');
+                });
+            }
+            
+        } else if ("jwplayer" == player_config.player) {
+            jwplayer("player").setup({
+                file: i,
+                type: o,
+                autostart: false,
                 image: a,
                 width: "100%",
                 aspectratio: "16:9",
@@ -775,7 +2944,7 @@ function file_video(e, t, n, a, i, o, l, r) {
                     file: i,
                     kind: "captions",
                     label: "Default",
-                    default: !0
+                    default: true
                 }],
                 captions: {
                     color: "#f3f378",
@@ -783,15 +2952,25 @@ function file_video(e, t, n, a, i, o, l, r) {
                     backgroundOpacity: 50,
                     edgeStyle: "raised"
                 }
-            })
-    }
-    ,
+            });
+            
+            // Fullscreen button functionality
+            const fullscreenBtn = document.getElementById('fullscreen-video');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    jwplayer("player").setFullscreen(true);
+                });
+            }
+        }
+};
+    
     document.head.appendChild(h);
     var y = document.createElement("link");
     y.href = player_css,
     y.rel = "stylesheet",
-    document.head.appendChild(y)
+    document.head.appendChild(y);
 }
+
 function file_audio(e, t, n, a, i, o) {
     var l = btoa(a)
       , r = window.location.pathname.split("/");
@@ -799,11 +2978,163 @@ function file_audio(e, t, n, a, i, o) {
     for (var d = "", c = "", p = 0; p < r.length; p++) {
         var m = r[p];
         p == r.length - 1 ? c += m + "?a=view" : c += m + "/",
-        m.length > 15 && (m = (m = decodeURIComponent(m)).substring(0, 10) + "..."),
+        m.length > 30 && (m = (m = decodeURIComponent(m)).substring(0, 25) + "..."),
         "" == m && (m = "Home"),
         d += '<a href="' + c + '" class="breadcrumb-item">' + m + "</a>"
     }
-    var g = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${d}\n        </ol>\n      </nav>\n      <div class="card text-center">\n        <div class="text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          ${UI.disable_player ? "" : `\n          <video id="aplayer" poster="${UI.audioposter}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">\n            <source src="${a}" type="audio/mpeg" />\n            <source src="${a}" type="audio/ogg" />\n            <source src="${a}" type="audio/wav" />\n          </video>`}\n        </div>\n        </br>\n        ${UI.disable_audio_download ? "" : `\n          <div class="card-body">\n          <div class="input-group mb-4">\n          <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n              <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n              <a class="dropdown-item" href="iina://weblink?url=${a}">IINA</a>\n              <a class="dropdown-item" href="potplayer://${a}">PotPlayer</a>\n              <a class="dropdown-item" href="vlc://${a}">VLC Mobile</a>\n              <a class="dropdown-item" href="${a}">VLC Desktop</a>\n              <a class="dropdown-item" href="nplayer-${a}">nPlayer</a>\n              <a class="dropdown-item" href="intent://${a}#Intent;type=audio/any;package=is.xyz.mpv;scheme=https;end;">mpv-android</a>\n              <a class="dropdown-item" href="mpv://${l}">mpv x64</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end">MX Player (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end">MX Player (Pro)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n              <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n              <a class="dropdown-item" href="intent://${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n          </div>\n          ` + copyButton + s + "\n          <br>\n          </div>\n          </div>\n          "}\n      </div>\n    </div>\n  `;
+    var g = `
+    <div class="container-fluid"><br>
+      <style>
+        .path-navigation-container {
+          margin-bottom: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(0,0,0,0.02);
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .path-navigation-container {
+          background: rgba(255,255,255,0.05);
+          border-left-color: #0d6efd;
+        }
+        .path-navigation-container:hover {
+          background: rgba(0,0,0,0.04);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .path-navigation-container:hover {
+          background: rgba(255,255,255,0.08);
+        }
+        .breadcrumb {
+          margin-bottom: 0;
+          background: transparent;
+          padding: 0;
+        }
+        .breadcrumb-item a {
+          text-decoration: none;
+          color: #007bff;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+        [data-theme="dark"] .breadcrumb-item a {
+          color: #0d6efd;
+        }
+        .breadcrumb-item a:hover {
+          color: #0056b3;
+          transform: translateX(2px);
+        }
+        [data-theme="dark"] .breadcrumb-item a:hover {
+          color: #3d8bfd;
+        }
+        .breadcrumb-item.active {
+          color: #6c757d;
+          font-weight: 500;
+        }
+        [data-theme="dark"] .breadcrumb-item.active {
+          color: #adb5bd;
+        }
+      </style>
+      <div class="path-navigation-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">
+            <li class="breadcrumb-item">
+              <a href="/">
+                <i class="bi bi-house-door me-1"></i>
+                <span>Início</span>
+              </a>
+            </li>
+            ${d}
+          </ol>
+        </nav>
+      </div>
+      
+      <!-- Audio Player Container -->
+      <div class="card">
+        <!-- Audio Toolbar -->
+        <div class="card-header bg-primary text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0"><i class="bi bi-music-note me-2"></i>${e}</h5>
+              <small>${n}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end align-items-center">
+                <!-- Download Button -->
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="initiateDownload('${e}', '${a}', '${n}')" title="Baixar áudio">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div class="card-body p-0" style="background-color: #f8f9fa;">
+          <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+            ${UI.disable_player ? `
+              <div class="text-center">
+                <i class="bi bi-music-note-beamed text-muted" style="font-size: 4rem;"></i>
+                <p class="text-muted mt-3">Player de áudio desabilitado</p>
+              </div>
+            ` : `
+              <video id="aplayer" poster="${UI.audioposter}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">
+                <source src="${a}" type="audio/mpeg" />
+                <source src="${a}" type="audio/ogg" />
+                <source src="${a}" type="audio/wav" />
+              </video>
+            `}
+          </div>
+        </div>
+        
+        <!-- Audio Actions -->
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="text" class="form-control" id="dlurl" value="${a}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('dlurl')" title="Copiar link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-primary" onclick="initiateDownload('${e}', '${a}', '${n}')" title="Baixar áudio">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Players</h6></li>
+                    <li><a class="dropdown-item" href="iina://weblink?url=${a}"><i class="bi bi-play-circle me-2"></i>IINA</a></li>
+                    <li><a class="dropdown-item" href="potplayer://${a}"><i class="bi bi-play-circle me-2"></i>PotPlayer</a></li>
+                    <li><a class="dropdown-item" href="vlc://${a}"><i class="bi bi-play-circle me-2"></i>VLC Mobile</a></li>
+                    <li><a class="dropdown-item" href="${a}"><i class="bi bi-play-circle me-2"></i>VLC Desktop</a></li>
+                    <li><a class="dropdown-item" href="nplayer-${a}"><i class="bi bi-play-circle me-2"></i>nPlayer</a></li>
+                    <li><a class="dropdown-item" href="intent://${a}#Intent;type=audio/any;package=is.xyz.mpv;scheme=https;end;"><i class="bi bi-play-circle me-2"></i>mpv-android</a></li>
+                    <li><a class="dropdown-item" href="mpv://${l}"><i class="bi bi-play-circle me-2"></i>mpv x64</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.ad;S.title=${t};end"><i class="bi bi-play-circle me-2"></i>MX Player (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;package=com.mxtech.videoplayer.pro;S.title=${t};end"><i class="bi bi-play-circle me-2"></i>MX Player (Pro)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Downloaders</h6></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a></li>
+                    <li><a class="dropdown-item" href="intent://${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="${a}" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>Google Drive</a></li>
+                  </ul>
+                </div>
+                ${s}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
     $("#content").html(g);
     var f = document.createElement("script");
     f.src = "https://vjs.zencdn.net/" + UI.videojs_version + "/video.min.js",
@@ -880,23 +3211,236 @@ function file_pdf(e, t, n, a, i, o) {
     for (var s = "", d = "", c = 0; c < l.length; c++) {
         var p = l[c];
         c == l.length - 1 ? d += p + "?a=view" : d += p + "/",
-        p.length > 15 && (p = (p = decodeURIComponent(p)).substring(0, 10) + "..."),
+        p.length > 30 && (p = (p = decodeURIComponent(p)).substring(0, 25) + "..."),
         "" == p && (p = "Home"),
         s += '<a href="' + d + '" class="breadcrumb-item">' + p + "</a>"
     }
-    var m = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n      <div class="card">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          <div>\n            <button id="prev" class="btn btn-info">Anterior</button>\n            <button id="next" class="btn btn-info">Próxima</button>\n            &nbsp; &nbsp;\n            <span>Página: <span id="page_num"></span> / <span id="page_count"></span></span>\n          </div><br>\n          <canvas id="the-canvas" style="max-width: 100%;"></canvas>\n        </div>\n        <div class="card-body">\n          <div class="input-group mb-4">\n            <div class="input-group-prepend">\n              <span class="input-group-text" id="">Full URL</span>\n            </div>\n            <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ${copyButton}${r}\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>\n  `;
+    
+    var m = `
+    <div class="container-fluid"><br>
+      <style>
+        .path-navigation-container {
+          margin-bottom: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(0,0,0,0.02);
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .path-navigation-container {
+          background: rgba(255,255,255,0.05);
+          border-left-color: #0d6efd;
+        }
+        .path-navigation-container:hover {
+          background: rgba(0,0,0,0.04);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .path-navigation-container:hover {
+          background: rgba(255,255,255,0.08);
+        }
+        .breadcrumb {
+          margin-bottom: 0;
+          background: transparent;
+          padding: 0;
+        }
+        .breadcrumb-item a {
+          text-decoration: none;
+          color: #007bff;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+        [data-theme="dark"] .breadcrumb-item a {
+          color: #0d6efd;
+        }
+        .breadcrumb-item a:hover {
+          color: #0056b3;
+          transform: translateX(2px);
+        }
+        [data-theme="dark"] .breadcrumb-item a:hover {
+          color: #3d8bfd;
+        }
+        .breadcrumb-item.active {
+          color: #6c757d;
+          font-weight: 500;
+        }
+        [data-theme="dark"] .breadcrumb-item.active {
+          color: #adb5bd;
+        }
+      </style>
+      <div class="path-navigation-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">
+            <li class="breadcrumb-item">
+              <a href="/">
+                <i class="bi bi-house-door me-1"></i>
+                <span>Início</span>
+              </a>
+            </li>
+            ${s}
+          </ol>
+        </nav>
+      </div>
+      
+      <!-- PDF Viewer Container -->
+      <div class="card">
+        <!-- PDF Toolbar -->
+        <div class="card-header bg-primary text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0"><i class="bi bi-file-pdf me-2"></i>${e}</h5>
+              <small>${n}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end align-items-center">
+                <!-- Zoom Controls -->
+                <div class="btn-group me-2" role="group">
+                  <button id="zoom-out" class="btn btn-outline-light btn-sm" title="Diminuir zoom">
+                    <i class="bi bi-zoom-out"></i>
+                  </button>
+                  <button id="zoom-reset" class="btn btn-outline-light btn-sm" title="Zoom padrão">
+                    <i class="bi bi-zoom-in"></i>
+                  </button>
+                  <button id="zoom-in" class="btn btn-outline-light btn-sm" title="Aumentar zoom">
+                    <i class="bi bi-zoom-in"></i>
+                  </button>
+                </div>
+                
+                <!-- Page Controls -->
+                <div class="btn-group me-2" role="group">
+                  <button id="prev" class="btn btn-outline-light btn-sm" title="Página anterior">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <button id="next" class="btn btn-outline-light btn-sm" title="Próxima página">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+                
+                <!-- Page Info -->
+                <div class="text-light me-2">
+                  <span id="page_num">1</span> / <span id="page_count">1</span>
+                </div>
+                
+                <!-- Fullscreen Toggle -->
+                <button id="fullscreen-toggle" class="btn btn-outline-light btn-sm" title="Tela cheia">
+                  <i class="bi bi-fullscreen"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PDF Canvas Container -->
+        <div class="card-body p-0" style="background-color: #f8f9fa;">
+          <div id="pdf-container" class="d-flex justify-content-center" style="min-height: 600px; overflow: auto;">
+            <div id="pdf-loading" class="d-flex align-items-center justify-content-center" style="height: 400px;">
+              <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Carregando PDF...</span>
+                </div>
+                <p class="mt-2">Carregando PDF...</p>
+              </div>
+            </div>
+            <canvas id="the-canvas" class="shadow" style="max-width: 100%; display: none;"></canvas>
+          </div>
+        </div>
+        
+        <!-- PDF Actions -->
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="text" class="form-control" id="dlurl" value="${a}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('dlurl')" title="Copiar link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-primary" title="Baixar PDF" onclick="initiateDownload('${e}', '${a}', '${n}')">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a></li>
+                  </ul>
+                </div>
+                ${copyButton}${r}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <style>
+      #pdf-container {
+        position: relative;
+      }
+      
+      #the-canvas {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.3s ease;
+      }
+      
+      .pdf-toolbar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px 8px 0 0;
+      }
+      
+      .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+      }
+      
+      .card-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      @media (max-width: 768px) {
+        .card-header .row {
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .card-header .col-md-6:last-child {
+          justify-content: center !important;
+        }
+      }
+    </style>
+  `;
     $("#content").html(m);
 
+    // PDF Viewer Implementation
     var url = a;
     var pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdn.jsdelivr.net/npm/pdfjs-dist@2.12.313/build/pdf.worker.js';
+    
     var pdfDoc = null,
         pageNum = 1,
         pageRendering = false,
         pageNumPending = null,
-        scale = 0.8,
+        scale = 1.0,
         canvas = document.getElementById('the-canvas'),
         ctx = canvas.getContext('2d');
+
+    // Loading state
+    const loadingDiv = document.getElementById('pdf-loading');
+    const canvasElement = document.getElementById('the-canvas');
 
     function renderPage(num) {
         pageRendering = true;
@@ -904,10 +3448,12 @@ function file_pdf(e, t, n, a, i, o) {
             var viewport = page.getViewport({scale: scale});
             canvas.height = viewport.height;
             canvas.width = viewport.width;
+            
             var renderContext = {
                 canvasContext: ctx,
                 viewport: viewport
             };
+            
             var renderTask = page.render(renderContext);
             renderTask.promise.then(function() {
                 pageRendering = false;
@@ -917,7 +3463,12 @@ function file_pdf(e, t, n, a, i, o) {
                 }
             });
         });
+        
         document.getElementById('page_num').textContent = num;
+        
+        // Update button states
+        document.getElementById('prev').disabled = (num <= 1);
+        document.getElementById('next').disabled = (num >= pdfDoc.numPages);
     }
 
     function queueRenderPage(num) {
@@ -929,27 +3480,119 @@ function file_pdf(e, t, n, a, i, o) {
     }
 
     function onPrevPage() {
-        if (pageNum <= 1) {
-            return;
-        }
+        if (pageNum <= 1) return;
         pageNum--;
         queueRenderPage(pageNum);
     }
-    document.getElementById('prev').addEventListener('click', onPrevPage);
 
     function onNextPage() {
-        if (pageNum >= pdfDoc.numPages) {
-            return;
-        }
+        if (pageNum >= pdfDoc.numPages) return;
         pageNum++;
         queueRenderPage(pageNum);
     }
-    document.getElementById('next').addEventListener('click', onNextPage);
 
+    function zoomIn() {
+        if (scale < 3.0) {
+            scale += 0.25;
+            queueRenderPage(pageNum);
+        }
+    }
+
+    function zoomOut() {
+        if (scale > 0.5) {
+            scale -= 0.25;
+            queueRenderPage(pageNum);
+        }
+    }
+
+    function zoomReset() {
+        scale = 1.0;
+        queueRenderPage(pageNum);
+    }
+
+    function toggleFullscreen() {
+        const container = document.getElementById('pdf-container');
+        const fullscreenBtn = document.getElementById('fullscreen-toggle');
+        const icon = fullscreenBtn.querySelector('i');
+        
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().then(() => {
+                icon.className = 'bi bi-fullscreen-exit';
+                fullscreenBtn.title = 'Sair da tela cheia';
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                icon.className = 'bi bi-fullscreen';
+                fullscreenBtn.title = 'Tela cheia';
+            });
+        }
+    }
+
+    // Event Listeners
+    document.getElementById('prev').addEventListener('click', onPrevPage);
+    document.getElementById('next').addEventListener('click', onNextPage);
+    document.getElementById('zoom-in').addEventListener('click', zoomIn);
+    document.getElementById('zoom-out').addEventListener('click', zoomOut);
+    document.getElementById('zoom-reset').addEventListener('click', zoomReset);
+    document.getElementById('fullscreen-toggle').addEventListener('click', toggleFullscreen);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName.toLowerCase() === 'input') return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                e.preventDefault();
+                onPrevPage();
+                break;
+            case 'ArrowRight':
+            case 'ArrowDown':
+            case ' ':
+                e.preventDefault();
+                onNextPage();
+                break;
+            case '+':
+            case '=':
+                e.preventDefault();
+                zoomIn();
+                break;
+            case '-':
+                e.preventDefault();
+                zoomOut();
+                break;
+            case '0':
+                e.preventDefault();
+                zoomReset();
+                break;
+            case 'f':
+            case 'F11':
+                e.preventDefault();
+                toggleFullscreen();
+                break;
+        }
+    });
+
+    // Load PDF
     pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
         pdfDoc = pdfDoc_;
         document.getElementById('page_count').textContent = pdfDoc.numPages;
+        
+        // Hide loading, show canvas
+        loadingDiv.style.display = 'none';
+        canvasElement.style.display = 'block';
+        
         renderPage(pageNum);
+    }).catch(function(error) {
+        console.error('Erro ao carregar PDF:', error);
+        loadingDiv.innerHTML = `
+            <div class="text-center text-danger">
+                <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">Erro ao carregar PDF</h4>
+                <p>Não foi possível carregar o arquivo PDF.</p>
+                <button class="btn btn-primary" onclick="initiateDownload('${e}', '${a}', '${n}')">Baixar PDF</button>
+            </div>
+        `;
     });
 }
 function file_image(e, t, n, a, i, o) {
@@ -958,12 +3601,220 @@ function file_image(e, t, n, a, i, o) {
     for (var s = "", d = "", c = 0; c < l.length; c++) {
         var p = l[c];
         c == l.length - 1 ? d += p + "?a=view" : d += p + "/",
-        p.length > 15 && (p = (p = decodeURIComponent(p)).substring(0, 10) + "..."),
+        p.length > 30 && (p = (p = decodeURIComponent(p)).substring(0, 25) + "..."),
         "" == p && (p = "Home"),
         s += '<a href="' + d + '" class="breadcrumb-item">' + p + "</a>"
     }
-    var m = `\n    <div class="container text-center"><br>\n      <nav aria-label="breadcrumb">\n        <ol class="breadcrumb">\n          ${s}\n        </ol>\n      </nav>\n      <div class="card">\n        <div class="card-body text-center">\n          <div class="${UI.file_view_alert_class}" id="file_details" role="alert">${e}<br>${n}</div>\n          <img src="${a}" id="load_image" width="100%">\n        </div>\n        <div class="card-body">\n          <div class="input-group mb-4">\n            <div class="input-group-prepend">\n              <span class="input-group-text" id="">Full URL</span>\n            </div>\n            <input type="text" class="form-control" id="dlurl" value="${a}" readonly>\n          </div>\n          <div class="card-text text-center">\n            <div class="btn-group text-center">\n              <a href="${a}" type="button" class="btn btn-primary">Baixar</a>\n              <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\n                <span class="sr-only"></span>\n              </button>\n              <div class="dropdown-menu">\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a>\n                <a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a>\n              </div>\n            </div>\n            ` + copyButton + r + "\n          </div>\n          <br>\n        </div>\n      </div>\n    </div>\n  ";
-    $("#content").html(m)
+    var m = `
+    <div class="container-fluid"><br>
+      <style>
+        .path-navigation-container {
+          margin-bottom: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(0,0,0,0.02);
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .path-navigation-container {
+          background: rgba(255,255,255,0.05);
+          border-left-color: #0d6efd;
+        }
+        .path-navigation-container:hover {
+          background: rgba(0,0,0,0.04);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] .path-navigation-container:hover {
+          background: rgba(255,255,255,0.08);
+        }
+        .breadcrumb {
+          margin-bottom: 0;
+          background: transparent;
+          padding: 0;
+        }
+        .breadcrumb-item a {
+          text-decoration: none;
+          color: #007bff;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+        [data-theme="dark"] .breadcrumb-item a {
+          color: #0d6efd;
+        }
+        .breadcrumb-item a:hover {
+          color: #0056b3;
+          transform: translateX(2px);
+        }
+        [data-theme="dark"] .breadcrumb-item a:hover {
+          color: #3d8bfd;
+        }
+        .breadcrumb-item.active {
+          color: #6c757d;
+          font-weight: 500;
+        }
+        [data-theme="dark"] .breadcrumb-item.active {
+          color: #adb5bd;
+        }
+      </style>
+      <div class="path-navigation-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb" style="--bs-breadcrumb-divider: '›'; --bs-breadcrumb-item-padding-x: 0.5rem;">
+            <li class="breadcrumb-item">
+              <a href="/">
+                <i class="bi bi-house-door me-1"></i>
+                <span>Início</span>
+              </a>
+            </li>
+            ${s}
+          </ol>
+        </nav>
+      </div>
+      
+      <!-- Image Viewer Container -->
+      <div class="card">
+        <!-- Image Toolbar -->
+        <div class="card-header bg-primary text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0"><i class="bi bi-image me-2"></i>${e}</h5>
+              <small>${n}</small>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end align-items-center">
+                <!-- Zoom Controls -->
+                <div class="btn-group me-2" role="group">
+                  <button id="zoom-out" class="btn btn-outline-light btn-sm" title="Diminuir zoom">
+                    <i class="bi bi-zoom-out"></i>
+                  </button>
+                  <button id="zoom-reset" class="btn btn-outline-light btn-sm" title="Zoom padrão">
+                    <i class="bi bi-zoom-in"></i>
+                  </button>
+                  <button id="zoom-in" class="btn btn-outline-light btn-sm" title="Aumentar zoom">
+                    <i class="bi bi-zoom-in"></i>
+                  </button>
+                </div>
+                
+                <!-- Fullscreen Toggle -->
+                <button id="fullscreen-toggle" class="btn btn-outline-light btn-sm" title="Tela cheia">
+                  <i class="bi bi-fullscreen"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Image Container -->
+        <div class="card-body p-0" style="background-color: #f8f9fa;">
+          <div id="image-container" class="d-flex justify-content-center align-items-center" style="min-height: 600px; overflow: auto;">
+            <img src="${a}" id="load_image" class="img-fluid shadow" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          </div>
+        </div>
+        
+        <!-- Image Actions -->
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="text" class="form-control" id="dlurl" value="${a}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('dlurl')" title="Copiar link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-primary" onclick="initiateDownload('${e}', '${a}', '${n}')" title="Baixar imagem">
+                  <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Downloaders</h6></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Free)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.adm.lite/idm.internet.download.manager.Downloader;S.title=${t};end">1DM (Lite)</a></li>
+                    <li><a class="dropdown-item" href="intent:${a}#Intent;component=idm.internet.download.manager.plus/idm.internet.download.manager.Downloader;S.title=${t};end">1DM+ (Plus)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="${a}" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>Google Drive</a></li>
+                  </ul>
+                </div>
+                ${r}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+    $("#content").html(m);
+    
+    // Image viewer functionality
+    let currentZoom = 1;
+    const image = document.getElementById('load_image');
+    const container = document.getElementById('image-container');
+    
+    // Zoom functionality
+    document.getElementById('zoom-in').addEventListener('click', function() {
+        currentZoom = Math.min(currentZoom + 0.2, 3);
+        image.style.transform = `scale(${currentZoom})`;
+    });
+    
+    document.getElementById('zoom-out').addEventListener('click', function() {
+        currentZoom = Math.max(currentZoom - 0.2, 0.5);
+        image.style.transform = `scale(${currentZoom})`;
+    });
+    
+    document.getElementById('zoom-reset').addEventListener('click', function() {
+        currentZoom = 1;
+        image.style.transform = `scale(${currentZoom})`;
+    });
+    
+    // Fullscreen functionality
+    document.getElementById('fullscreen-toggle').addEventListener('click', function() {
+        const fullscreenBtn = this;
+        const icon = fullscreenBtn.querySelector('i');
+        
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().then(() => {
+                icon.className = 'bi bi-fullscreen-exit';
+                fullscreenBtn.title = 'Sair da tela cheia';
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                icon.className = 'bi bi-fullscreen';
+                fullscreenBtn.title = 'Tela cheia';
+            });
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName.toLowerCase() === 'input') return;
+        
+        switch(event.key) {
+            case '+':
+            case '=':
+                event.preventDefault();
+                document.getElementById('zoom-in').click();
+                break;
+            case '-':
+                event.preventDefault();
+                document.getElementById('zoom-out').click();
+                break;
+            case '0':
+                event.preventDefault();
+                document.getElementById('zoom-reset').click();
+                break;
+            case 'f':
+            case 'F11':
+                event.preventDefault();
+                document.getElementById('fullscreen-toggle').click();
+                break;
+        }
+    });
 }
 function utc2delhi(e) {
     var t = new Date(e)
@@ -977,15 +3828,111 @@ function formatFileSize(e) {
     e
 }
 function markdown(e, t) {
+    try {
+        if (!t || typeof t !== 'string') {
+            console.log('markdown: invalid content', t);
+            return;
+        }
     var n = marked.parse(t);
-    $(e).show().html(n)
+        if (!n || typeof n !== 'string') {
+            console.log('markdown: failed to parse', n);
+            return;
+        }
+        $(e).show().html(n);
+    } catch (error) {
+        console.error('markdown error:', error, 'content:', t);
+        $(e).show().html('<p>Erro ao renderizar markdown</p>');
+    }
+}
+
+// Função para renderizar README.md
+function renderReadmeFile(fileId, fileName, mimeType) {
+    const renderReadme = localStorage.getItem('renderReadme') === 'true';
+    const renderTxt = localStorage.getItem('renderTxt') === 'true';
+    
+    // Verificar se é um arquivo README.md
+    const isReadme = fileName.toLowerCase().includes('readme');
+    
+    // Verificar se é um arquivo de texto (baseado em extensões comuns e MIME type)
+    const textExtensions = ['.txt', '.md', '.json', '.xml', '.csv', '.log', '.ini', '.cfg', '.conf', '.yaml', '.yml', '.toml', '.env', '.gitignore', '.htaccess', '.htpasswd'];
+    const isTextFile = textExtensions.some(ext => fileName.toLowerCase().endsWith(ext)) || 
+                      (mimeType && mimeType.startsWith('text/')) ||
+                      (mimeType && mimeType.includes('json')) ||
+                      (mimeType && mimeType.includes('xml'));
+    
+    // Verificar se deve renderizar baseado no tipo de arquivo e configuração
+    if ((isReadme && !renderReadme) || (isTextFile && !renderTxt) || (!isReadme && !isTextFile)) {
+        return null;
+    }
+    
+    // Fazer requisição para obter o conteúdo do arquivo
+    fetch(`/api/files/${fileId}/content`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text();
+        })
+        .then(content => {
+            // Determinar como renderizar baseado no tipo de arquivo
+            let renderedContent;
+            
+            if (isReadme) {
+                // README.md sempre como markdown
+                renderedContent = marked.parse(content);
+            } else if (isTextFile) {
+                // Arquivos de texto: verificar se é markdown ou texto simples
+                const isMarkdownFile = fileName.toLowerCase().endsWith('.md');
+                if (isMarkdownFile) {
+                    renderedContent = marked.parse(content);
+                } else {
+                    // Texto simples com formatação preservada
+                    renderedContent = `<pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${content}</pre>`;
+                }
+            }
+            
+            // Criar seção README/TXT inline
+            const readmeHtml = `
+                <div class="readme-section mb-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-text me-2"></i>${fileName}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="readme-content" style="max-height: 400px; overflow-y: auto; line-height: 1.6;">
+                                ${renderedContent}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Inserir README no topo da lista de arquivos
+            const listElement = $("#list");
+            if (listElement.length > 0) {
+                listElement.prepend(readmeHtml);
+            } else {
+                // Se não houver lista, inserir no content
+                const contentElement = $("#content");
+                if (contentElement.length > 0) {
+                    contentElement.prepend(readmeHtml);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar README:', error);
+        });
+    
+    return true; // Indica que o arquivo foi processado
 }
 function copyFunction() {
     var e = document.getElementById("dlurl");
     e.select(),
     e.setSelectionRange(0, 99999),
     navigator.clipboard.writeText(e.value).then((function() {
-        document.getElementById("myTooltip").innerHTML = "Copied"
+        document.getElementById("myTooltip").innerHTML = "Copiado"
     }
     )).catch((function(e) {
         console.error("Failed to copy text: ", e)
@@ -1018,7 +3965,7 @@ async function getCookie(e) {
 async function copyFile(e) {
     try {
         const t = document.getElementById("copystatus");
-        t.innerHTML = "<div class='alert alert-danger' role='alert'> Processing... </div>";
+        t.innerHTML = "<div class='alert alert-danger' role='alert'> Processando... </div>";
         const n = document.getElementById("user_folder_id").value;
         if ("" === n)
             return t.innerHTML = "<div class='alert alert-danger' role='alert'> Empty ID </div>",
@@ -1042,7 +3989,7 @@ async function copyFile(e) {
             const e = await i.json();
             if (e && e.name) {
                 const t = `https://drive.google.com/file/d/${e.id}/view?usp=share_link`;
-                document.getElementById("copyresult").innerHTML = `<div class="col-12 col-md-12"> <input type="text" id="usercopiedfile" class="form-control" placeholder="Enter Your Folder ID to Copy this File" value="${t}" readonly></div> <div class="col-12 col-md-12"> <a href="${t}" target="_blank" style="margin-top: 5px;" class="btn btn-danger btn-block">Open Copied File</a></div>`
+                document.getElementById("copyresult").innerHTML = `<div class="col-12 col-md-12"> <input type="text" id="usercopiedfile" class="form-control" placeholder="Enter Your Folder ID to Copy this File" value="${t}" readonly></div> <div class="col-12 col-md-12"> <a href="${t}" target="_blank" style="margin-top: 5px;" class="btn btn-danger btn-block">Abrir arquivo copiado</a></div>`
             } else
                 e && e.error && e.error.message ? t.innerHTML = "<div class='alert alert-danger' role='alert'> " + e.error.message + " </div>" : t.innerHTML = "<div class='alert alert-danger' role='alert'> Unable to Copy File </div>"
         } else
@@ -1075,4 +4022,522 @@ const observer = new MutationObserver((()=>{
     subtree: !0
 };
 observer.observe(document.documentElement, options);
-//# sourceMappingURL=/sm/b2928b7347ff704bcf1dabbeb582bad49115ccb004b69224c9fb62398662eaf7.map
+
+// Dark Mode Toggle Function
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const icon = document.getElementById('dark-mode-icon');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    
+    let newTheme, newIconClass, newBootswatchTheme;
+    
+    if (currentTheme === 'dark') {
+        newTheme = 'light';
+        newIconClass = 'bi bi-moon-fill';
+        newBootswatchTheme = 'flatly';
+        html.removeAttribute('data-theme');
+    } else {
+        newTheme = 'dark';
+        newIconClass = 'bi bi-sun-fill';
+        newBootswatchTheme = 'darkly';
+        html.setAttribute('data-theme', 'dark');
+    }
+    
+    // Update icon
+    if (icon) {
+        icon.className = newIconClass;
+    }
+    
+    // Update menu text
+    const darkModeText = document.getElementById('darkModeText');
+    if (darkModeText) {
+        darkModeText.textContent = newTheme === 'dark' ? 'Modo Claro' : 'Modo Noturno';
+    }
+    
+    // Save theme preference
+    localStorage.setItem('theme', newTheme);
+    
+    // Change Bootswatch theme
+    const currentLink = document.querySelector('link[href*="bootswatch"]');
+    if (currentLink) {
+        const baseUrl = 'https://cdn.jsdelivr.net/npm/bootswatch@5.0.0/dist/';
+        const newHref = baseUrl + newBootswatchTheme + '/bootstrap.min.css';
+        currentLink.href = newHref;
+    } else {
+        console.log('Bootswatch link not found!');
+    }
+    
+}
+
+// Initialize theme on page load
+function initializeTheme() {
+    console.log('initializeTheme called');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const html = document.documentElement;
+    const icon = document.getElementById('dark-mode-icon');
+    
+    if (savedTheme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        if (icon) icon.className = 'bi bi-sun-fill';
+        
+        // Apply dark Bootswatch theme
+        const currentLink = document.querySelector('link[href*="bootswatch"]');
+        if (currentLink) {
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/bootswatch@5.0.0/dist/';
+            const newHref = baseUrl + 'darkly/bootstrap.min.css';
+            currentLink.href = newHref;
+        } else {
+            console.log('Bootswatch link not found!');
+        }
+        
+    } else {
+        html.removeAttribute('data-theme');
+        if (icon) icon.className = 'bi bi-moon-fill';
+        
+        // Apply light Bootswatch theme
+        const currentLink = document.querySelector('link[href*="bootswatch"]');
+        if (currentLink) {
+            console.log('Current Bootswatch link:', currentLink.href);
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/bootswatch@5.0.0/dist/';
+            const newHref = baseUrl + 'flatly/bootstrap.min.css';
+            currentLink.href = newHref;
+        } else {
+            console.log('Bootswatch link not found!');
+        }
+        
+    }
+}
+
+// Função para adicionar nuvens animadas no background
+function addCloudsBackground() {
+    if (document.getElementById('clouds-background')) {
+        return;
+    }
+    
+    
+    // Adicionar CSS das nuvens
+    const style = document.createElement('style');
+    style.id = 'clouds-styles';
+    style.textContent = `
+        /* Animated clouds background */
+        .clouds-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(128, 128, 128, 0.7);
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: float 20s infinite linear;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .cloud:before {
+            content: '';
+            position: absolute;
+            background: rgba(128, 128, 128, 0.7);
+            border-radius: 50px;
+        }
+
+        .cloud:after {
+            content: '';
+            position: absolute;
+            background: rgba(128, 128, 128, 0.7);
+            border-radius: 50px;
+        }
+
+        /* Cloud 1 */
+        .cloud:nth-child(1) {
+            width: 100px;
+            height: 40px;
+            top: 20%;
+            animation-delay: 0s;
+            animation-duration: 25s;
+        }
+
+        .cloud:nth-child(1):before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 10px;
+        }
+
+        .cloud:nth-child(1):after {
+            width: 60px;
+            height: 40px;
+            top: -15px;
+            right: 10px;
+        }
+
+        /* Cloud 2 */
+        .cloud:nth-child(2) {
+            width: 80px;
+            height: 30px;
+            top: 40%;
+            animation-delay: -5s;
+            animation-duration: 30s;
+        }
+
+        .cloud:nth-child(2):before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 15px;
+        }
+
+        .cloud:nth-child(2):after {
+            width: 50px;
+            height: 30px;
+            top: -10px;
+            right: 15px;
+        }
+
+        /* Cloud 3 */
+        .cloud:nth-child(3) {
+            width: 120px;
+            height: 50px;
+            top: 60%;
+            animation-delay: -10s;
+            animation-duration: 35s;
+        }
+
+        .cloud:nth-child(3):before {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 20px;
+        }
+
+        .cloud:nth-child(3):after {
+            width: 70px;
+            height: 50px;
+            top: -20px;
+            right: 20px;
+        }
+
+        /* Cloud 4 */
+        .cloud:nth-child(4) {
+            width: 90px;
+            height: 35px;
+            top: 80%;
+            animation-delay: -15s;
+            animation-duration: 28s;
+        }
+
+        .cloud:nth-child(4):before {
+            width: 45px;
+            height: 45px;
+            top: -22px;
+            left: 12px;
+        }
+
+        .cloud:nth-child(4):after {
+            width: 55px;
+            height: 35px;
+            top: -12px;
+            right: 12px;
+        }
+
+        /* Cloud 5 */
+        .cloud:nth-child(5) {
+            width: 70px;
+            height: 25px;
+            top: 10%;
+            animation-delay: -20s;
+            animation-duration: 32s;
+        }
+
+        .cloud:nth-child(5):before {
+            width: 35px;
+            height: 35px;
+            top: -17px;
+            left: 8px;
+        }
+
+        .cloud:nth-child(5):after {
+            width: 40px;
+            height: 25px;
+            top: -8px;
+            right: 8px;
+        }
+
+        /* Dark mode clouds */
+        [data-theme="dark"] .cloud {
+            background: rgba(200, 200, 200, 0.6);
+        }
+
+        [data-theme="dark"] .cloud:before,
+        [data-theme="dark"] .cloud:after {
+            background: rgba(200, 200, 200, 0.6);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateX(-100px);
+            }
+            100% {
+                transform: translateX(calc(100vw + 100px));
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Adicionar HTML das nuvens
+    const cloudsDiv = document.createElement('div');
+    cloudsDiv.id = 'clouds-background';
+    cloudsDiv.className = 'clouds-background';
+    cloudsDiv.innerHTML = `
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+    `;
+    document.body.appendChild(cloudsDiv);
+}
+
+// Função removida - modo noturno agora está no menu de configurações
+
+// Add CSS styles for floating button
+// Função removida - estilos agora estão no menu de configurações
+function addFloatingButtonStyles_removed() {
+    if (document.getElementById('floating-button-styles')) {
+        return;
+    }
+    
+    const style = document.createElement('style');
+    style.id = 'floating-button-styles';
+    style.textContent = `
+        /* Floating Dark Mode Toggle Button */
+        .floating-dark-mode-btn {
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+
+        .floating-btn {
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          border: none;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-size: 1rem;
+          cursor: pointer;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .floating-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          border-radius: 50%;
+        }
+
+        .floating-btn:hover {
+          transform: translateY(-3px) scale(1.1);
+          box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+        }
+
+        .floating-btn:hover::before {
+          opacity: 1;
+        }
+
+        .floating-btn:active {
+          transform: translateY(-1px) scale(1.05);
+        }
+
+        .floating-btn i {
+          position: relative;
+          z-index: 1;
+          transition: all 0.3s ease;
+        }
+
+        .floating-btn:hover i {
+          transform: rotate(180deg);
+        }
+
+        /* Dark mode styles for floating button */
+        [data-theme="dark"] .floating-btn {
+          background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+          box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        [data-theme="dark"] .floating-btn::before {
+          background: linear-gradient(135deg, #feca57 0%, #ff6b6b 100%);
+        }
+
+        [data-theme="dark"] .floating-btn:hover {
+          box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Light theme - black text */
+        .navbar-brand,
+        .nav-link,
+        .nav-link:hover,
+        .nav-link:focus,
+        .nav-link:active,
+        .navbar-text,
+        .navbar-text strong {
+          color: #000000 !important;
+        }
+
+        /* Override Bootstrap/Bootswatch link colors */
+        .navbar .nav-link {
+          color: #000000 !important;
+        }
+
+        .navbar .nav-link:hover {
+          color: #000000 !important;
+        }
+
+        .navbar .nav-link:focus {
+          color: #000000 !important;
+        }
+
+        /* Dark Mode Styles for Navbar */
+        [data-theme="dark"] .navbar {
+          background-color: #2d2d2d !important;
+          border-bottom: 1px solid #444;
+        }
+
+        [data-theme="dark"] .navbar-brand,
+        [data-theme="dark"] .nav-link {
+          color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .navbar-text {
+          color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .navbar-text strong {
+          color: #ffffff !important;
+        }
+
+        /* Light theme - dark navbar-toggler with high specificity */
+        .navbar .navbar-toggler,
+        .navbar-toggler {
+          border-color: #000000 !important;
+          background-color: transparent !important;
+        }
+
+        .navbar .navbar-toggler-icon,
+        .navbar-toggler-icon {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+          background-repeat: no-repeat !important;
+          background-position: center !important;
+          background-size: 100% !important;
+        }
+
+        /* Dark theme - white navbar-toggler with high specificity */
+        [data-theme="dark"] .navbar .navbar-toggler,
+        [data-theme="dark"] .navbar-toggler {
+          border-color: #ffffff !important;
+          background-color: transparent !important;
+        }
+
+        [data-theme="dark"] .navbar .navbar-toggler-icon,
+        [data-theme="dark"] .navbar-toggler-icon {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+          background-repeat: no-repeat !important;
+          background-position: center !important;
+          background-size: 100% !important;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .floating-dark-mode-btn {
+            left: 10px;
+            bottom: 10px;
+          }
+          
+          .floating-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+          }
+        }
+
+        /* Animation for button appearance */
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        .floating-dark-mode-btn {
+          animation: slideInRight 0.6s ease-out;
+        }
+    `;
+    
+    document.head.appendChild(style);
+}
+
+// Initialize everything when DOM is ready
+function initializeDarkMode() {
+    initializeTheme();
+}
+
+// Initialize dark mode immediately when functions are defined
+setTimeout(function() {
+    initializeDarkMode();
+}, 100);
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDarkMode);
+} else {
+    initializeDarkMode();
+}
+
+// Also initialize when new content is loaded (for dynamic pages)
+const darkModeObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            // Check if new content was added and add button if needed
+            // Button creation removed - now handled by settings menu
+        }
+    });
+});
+
+function startObserving() {
+    if (document.body) {
+        darkModeObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        console.log('MutationObserver started observing document.body');
+    } else {
+        console.log('document.body not available yet, retrying in 100ms...');
+        setTimeout(startObserving, 100);
+    }
+}
+
+startObserving();
