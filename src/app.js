@@ -911,6 +911,19 @@ function createSettingsButton() {
                         <span id="txtText">Renderizar Texto</span>
                     </a>
                 </li>
+                <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="showStudiedStats()">
+                                <i class="bi bi-graph-up me-2"></i>
+                                <span>Progresso de Estudos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="showFavorites()">
+                                <i class="bi bi-star-fill me-2"></i>
+                                <span>Favoritos</span>
+                            </a>
+                        </li>
             </ul>
         </div>
     </div>
@@ -1122,7 +1135,13 @@ function append_files_to_list(e, t) {
             const isInHistory = history.some(item => item.path === c);
             const historyIcon = isInHistory ? '<i class="bi bi-clock-history text-warning me-1" title="Visitada recentemente"></i>' : '';
             
-            html += `<a href="${c}" style="color: ${UI.folder_text_color};" class="countitems list-group-item list-group-item-action" onclick="addToHistory('${c}', '${d.name.replace(/'/g, "\\'")}')"> ${folder_icon} ${historyIcon}${d.name} ${UI.display_time ? '<span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</a>`;
+            const studiedStatus = isStudied(d.id) ? 'bi bi-check-circle-fill text-success' : 'bi bi-circle text-muted';
+            const studiedTitle = isStudied(d.id) ? 'Marcado como estudado - Clique para desmarcar' : 'Clique para marcar como estudado';
+            // Check if folder is favorite
+            const favoriteStatus = isFavorite(d.id) ? 'bi-star-fill text-warning' : 'bi-star text-muted';
+            const favoriteTitle = isFavorite(d.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+            
+            html += `<a href="${c}" style="color: ${UI.folder_text_color};" class="countitems list-group-item list-group-item-action" onclick="addToHistory('${c}', '${d.name.replace(/'/g, "\\'")}')"> ${folder_icon} ${historyIcon}${d.name} <i class="favorite-icon ${favoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${favoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement);"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement);"></i> ${UI.display_time ? '<span class="badge bg-info float-end me-2"> ' + d.modifiedTime + " </span>" : ""}</a>`;
         } else {
             r = r + Number(d.size);
             d.size = formatFileSize(d.size);
@@ -1143,7 +1162,15 @@ function append_files_to_list(e, t) {
             " view",
             html += '<div class="list-group-item list-group-item-action">' + (UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + m + '" data-name="' + d.name + '" id="flexCheckDefault">' : ""),
             "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${f}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${f}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${f}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${f}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${f}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${f}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${f}|`) >= 0 ? html += pdf_icon : html += file_icon,
-            html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}">${d.name}</a>${UI.display_download ? `<a href="#" onclick="initiateDownload('${d.name}', '${m}', '${d.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + d.modifiedTime + " </span>" : ""}</div>`
+            (function() {
+                var studiedStatus = isStudied(d.id) ? 'bi bi-check-circle-fill text-success' : 'bi bi-circle text-muted';
+                var studiedTitle = isStudied(d.id) ? 'Marcado como estudado - Clique para desmarcar' : 'Clique para marcar como estudado';
+                // Check if file is favorite
+                const fileFavoriteStatus = isFavorite(d.id) ? 'bi-star-fill text-warning' : 'bi-star text-muted';
+                const fileFavoriteTitle = isFavorite(d.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+                
+                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}">${d.name}</a><i class="favorite-icon ${fileFavoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${fileFavoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement);"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement);"></i>${UI.display_download ? `<a href="#" onclick="initiateDownload('${d.name}', '${m}', '${d.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end me-2"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end me-2"> ' + d.modifiedTime + " </span>" : ""}</div>`;
+            })()
         }
     }
     if (s && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -1243,8 +1270,15 @@ function append_search_result_to_list(e) {
             var l = e[i];
             if (null == l.size && (l.size = ""),
             l.modifiedTime = utc2delhi(l.modifiedTime),
-            "application/vnd.google-apps.folder" == l.mimeType)
-                html += `<a style="color: ${UI.folder_text_color};" onclick="onSearchResultItemClick('${l.id}', false)" data-bs-toggle="modal" data-bs-target="#SearchModel" class="countitems list-group-item list-group-item-action"> ${folder_icon} ${l.name} ${UI.display_time ? '<span class="badge bg-info float-end"> ' + l.modifiedTime + " </span>" : ""}</a>`;
+            "application/vnd.google-apps.folder" == l.mimeType) {
+                var studiedStatus = isStudied(l.id) ? 'bi bi-check-circle-fill text-success' : 'bi bi-circle text-muted';
+                var studiedTitle = isStudied(l.id) ? 'Marcado como estudado - Clique para desmarcar' : 'Clique para marcar como estudado';
+                // Check if folder is favorite
+                const searchFavoriteStatus = isFavorite(l.id) ? 'bi-star-fill text-warning' : 'bi-star text-muted';
+                const searchFavoriteTitle = isFavorite(l.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+                
+                html += `<a style="color: ${UI.folder_text_color};" onclick="onSearchResultItemClick('${l.id}', false)" data-bs-toggle="modal" data-bs-target="#SearchModel" class="countitems list-group-item list-group-item-action"> ${folder_icon} ${l.name} <i class="favorite-icon ${searchFavoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${searchFavoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${l.id}', '${l.name.replace(/'/g, "\\'")}', this.parentElement);"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${l.id}', '${l.name.replace(/'/g, "\\'")}', this.parentElement);"></i> ${UI.display_time ? '<span class="badge bg-info float-end me-2"> ' + l.modifiedTime + " </span>" : ""}</a>`;
+            }
             else {
                 o = !0,
                 a = a + Number(l.size);
@@ -1254,7 +1288,15 @@ function append_search_result_to_list(e) {
                         (l.link.startsWith('http') ? l.link : window.location.origin + l.link);
                 html += `<div style="color: ${UI.css_a_tag_color};" gd-type="$item['mimeType']}" class="countitems size_items list-group-item list-group-item-action">${UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + s + '" data-name="' + l.name + '" id="flexCheckDefault">' : ""}`,
                 "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${r}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${r}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${r}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${r}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${r}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${r}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${r}|`) >= 0 ? html += pdf_icon : html += file_icon,
-                html += ` <span onclick="onSearchResultItemClick('${l.id}', true)" data-bs-toggle="modal" data-bs-target="#SearchModel">${l.name}</span>${UI.display_download ? `<a href="#" onclick="initiateDownload('${l.name}', '${s}', '${l.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}<span class="badge float-end csize"> ${UI.display_size ? '<span class="badge bg-primary float-end"> ' + l.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + l.modifiedTime + " </span>" : ""}</div>`
+                (function() {
+                    var studiedStatus = isStudied(l.id) ? 'bi bi-check-circle-fill text-success' : 'bi bi-circle text-muted';
+                    var studiedTitle = isStudied(l.id) ? 'Marcado como estudado - Clique para desmarcar' : 'Clique para marcar como estudado';
+                    // Check if file is favorite
+                    const searchFileFavoriteStatus = isFavorite(l.id) ? 'bi-star-fill text-warning' : 'bi-star text-muted';
+                    const searchFileFavoriteTitle = isFavorite(l.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+                    
+                    html += ` <span onclick="onSearchResultItemClick('${l.id}', true)" data-bs-toggle="modal" data-bs-target="#SearchModel">${l.name}</span><i class="favorite-icon ${searchFileFavoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${searchFileFavoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${l.id}', '${l.name.replace(/'/g, "\\'")}', this.parentElement);"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${l.id}', '${l.name.replace(/'/g, "\\'")}', this.parentElement);"></i>${UI.display_download ? `<a href="#" onclick="initiateDownload('${l.name}', '${s}', '${l.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}<span class="badge float-end csize"> ${UI.display_size ? '<span class="badge bg-primary float-end me-2"> ' + l.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end me-2"> ' + l.modifiedTime + " </span>" : ""}</div>`;
+                })()
             }
         }
         o && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -1865,6 +1907,552 @@ function showBulkDownloadModal(filesWithNames) {
     document.getElementById('startBulkDownloadBtn').addEventListener('click', () => {
         startBulkDownload(filesWithNames);
     });
+}
+
+// Studied materials management
+function markAsStudied(itemId, itemName, isStudied) {
+    const studiedItems = getStudiedItems();
+    if (isStudied) {
+        studiedItems[itemId] = {
+            name: itemName,
+            date: new Date().toISOString(),
+            path: window.location.pathname // Store current path
+        };
+    } else {
+        delete studiedItems[itemId];
+    }
+    localStorage.setItem('studiedItems', JSON.stringify(studiedItems));
+}
+
+// Favorites management
+function markAsFavorite(itemId, itemName, isFavorite) {
+    const favoriteItems = getFavoriteItems();
+    if (isFavorite) {
+        favoriteItems[itemId] = {
+            name: itemName,
+            date: new Date().toISOString(),
+            path: window.location.pathname // Store current path
+        };
+    } else {
+        delete favoriteItems[itemId];
+    }
+    localStorage.setItem('favoriteItems', JSON.stringify(favoriteItems));
+}
+
+function getFavoriteItems() {
+    const stored = localStorage.getItem('favoriteItems');
+    return stored ? JSON.parse(stored) : {};
+}
+
+function isFavorite(itemId) {
+    const favoriteItems = getFavoriteItems();
+    return favoriteItems.hasOwnProperty(itemId);
+}
+
+function toggleFavoriteStatus(itemId, itemName, element) {
+    const currentlyFavorite = isFavorite(itemId);
+    const newStatus = !currentlyFavorite;
+    
+    markAsFavorite(itemId, itemName, newStatus);
+    updateFavoriteIcon(element, newStatus);
+}
+
+function updateFavoriteIcon(element, isFavorite) {
+    const icon = element.querySelector('.favorite-icon');
+    if (icon) {
+        if (isFavorite) {
+            icon.className = 'favorite-icon bi bi-star-fill text-warning';
+            icon.title = 'Remover dos favoritos';
+        } else {
+            icon.className = 'favorite-icon bi bi-star text-muted';
+            icon.title = 'Adicionar aos favoritos';
+        }
+    }
+}
+
+function getStudiedItems() {
+    const stored = localStorage.getItem('studiedItems');
+    return stored ? JSON.parse(stored) : {};
+}
+
+function isStudied(itemId) {
+    const studiedItems = getStudiedItems();
+    return studiedItems.hasOwnProperty(itemId);
+}
+
+function toggleStudiedStatus(itemId, itemName, element) {
+    const currentlyStudied = isStudied(itemId);
+    const newStatus = !currentlyStudied;
+    
+    markAsStudied(itemId, itemName, newStatus);
+    updateStudiedIcon(element, newStatus);
+}
+
+function updateStudiedIcon(element, isStudied) {
+    const icon = element.querySelector('.studied-icon');
+    if (icon) {
+        if (isStudied) {
+            icon.className = 'studied-icon bi bi-check-circle-fill text-success';
+            icon.title = 'Marcado como estudado - Clique para desmarcar';
+        } else {
+            icon.className = 'studied-icon bi bi-circle text-muted';
+            icon.title = 'Clique para marcar como estudado';
+        }
+    }
+}
+
+function showStudiedStats() {
+    const studiedItems = getStudiedItems();
+    const totalStudied = Object.keys(studiedItems).length;
+    
+    let statsHtml = `
+        <div class="modal fade" id="studiedStatsModal" tabindex="-1" aria-labelledby="studiedStatsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #6c757d, #495057); border: none; border-radius: 15px 15px 0 0; padding: 1.5rem;">
+                        <h5 class="modal-title text-white fw-bold" id="studiedStatsModalLabel" style="font-size: 1.3rem;">
+                            <i class="bi bi-graph-up me-2"></i>Progresso de Estudos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: 2rem;">
+                        <div class="row text-center mb-4">
+                            <div class="col-12">
+                                <div class="card" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <div class="card-body py-4">
+                                        <div class="d-flex align-items-center justify-content-center mb-2">
+                                            <i class="bi bi-check-circle-fill" style="font-size: 2.5rem; margin-right: 1rem; color: #6c757d;"></i>
+                                            <div>
+                                                <h2 class="mb-0 fw-bold" style="font-size: 2.5rem; color: #495057;">${totalStudied}</h2>
+                                                <p class="text-muted mb-0 fw-medium">Materiais Estudados</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    `;
+    
+    if (totalStudied > 0) {
+        statsHtml += `
+                        <h6 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-list-check me-2"></i>Materiais Concluídos
+                        </h6>
+                        <div class="list-group" style="max-height: 300px; overflow-y: auto; border-radius: 10px;">
+        `;
+        
+        // Ordenar por data (mais recente primeiro)
+        const sortedItems = Object.entries(studiedItems)
+            .sort(([,a], [,b]) => new Date(b.date) - new Date(a.date));
+        
+        sortedItems.forEach(([id, item]) => {
+            const date = new Date(item.date).toLocaleDateString('pt-BR');
+            const time = new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            statsHtml += `
+                <div class="list-group-item d-flex justify-content-between align-items-center" style="cursor: pointer; border: none; border-bottom: 1px solid #eee; padding: 1rem; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'" onclick="navigateToStudiedItem('${id}', '${item.name.replace(/'/g, "\\'")}')" title="Clique para ir para este material">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-3" style="font-size: 1.2rem; color: #6c757d;"></i>
+                        <span class="fw-medium">${item.name}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <small class="text-muted me-3">${date} às ${time}</small>
+                        <i class="bi bi-arrow-right" style="color: #6c757d;"></i>
+                    </div>
+                </div>
+            `;
+        });
+        
+        statsHtml += `
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-outline-danger" onclick="clearAllStudied()" style="border-radius: 25px; padding: 0.5rem 1.5rem;">
+                                <i class="bi bi-trash me-2"></i>Limpar Todos os Estudados
+                            </button>
+                        </div>
+        `;
+    } else {
+        statsHtml += `
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-book" style="font-size: 4rem; color: #6c757d; opacity: 0.5;"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">Nenhum material estudado ainda</h5>
+                            <p class="text-muted mb-4">Clique no ícone <i class="bi bi-circle" style="color: #6c757d;"></i> ao lado dos materiais para marcá-los como estudados!</p>
+                            <div class="alert alert-light" style="border-radius: 10px; border: 1px solid #dee2e6; background: #f8f9fa;">
+                                <i class="bi bi-lightbulb me-2" style="color: #6c757d;"></i>
+                                <strong>Dica:</strong> Marque os materiais como estudados para acompanhar seu progresso de aprendizado!
+                            </div>
+                        </div>
+        `;
+    }
+    
+    statsHtml += `
+                    </div>
+                    <div class="modal-footer" style="border: none; border-radius: 0 0 15px 15px; padding: 1.5rem; background: #f8f9fa;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 25px; padding: 0.5rem 1.5rem;">
+                            <i class="bi bi-x-circle me-2"></i>Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('studiedStatsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', statsHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('studiedStatsModal'));
+    modal.show();
+}
+
+function showFavorites() {
+    const favoriteItems = getFavoriteItems();
+    const totalFavorites = Object.keys(favoriteItems).length;
+    
+    let statsHtml = `
+        <div class="modal fade" id="favoritesModal" tabindex="-1" aria-labelledby="favoritesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #6c757d, #495057); border: none; border-radius: 15px 15px 0 0; padding: 1.5rem;">
+                        <h5 class="modal-title text-white fw-bold" id="favoritesModalLabel" style="font-size: 1.3rem;">
+                            <i class="bi bi-star-fill me-2"></i>Meus Favoritos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: 2rem;">
+                        <div class="row text-center mb-4">
+                            <div class="col-12">
+                                <div class="card" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <div class="card-body py-4">
+                                        <div class="d-flex align-items-center justify-content-center mb-2">
+                                            <i class="bi bi-star-fill" style="font-size: 2.5rem; margin-right: 1rem; color: #6c757d;"></i>
+                                            <div>
+                                                <h2 class="mb-0 fw-bold" style="font-size: 2.5rem; color: #495057;">${totalFavorites}</h2>
+                                                <p class="text-muted mb-0 fw-medium">Itens Favoritos</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    `;
+    
+    if (totalFavorites > 0) {
+        statsHtml += `
+                        <h6 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-list-ul me-2"></i>Lista de Favoritos
+                        </h6>
+                        <div class="list-group" style="max-height: 300px; overflow-y: auto; border-radius: 10px;">
+        `;
+        
+        const sortedItems = Object.entries(favoriteItems)
+            .sort(([,a], [,b]) => new Date(b.date) - new Date(a.date));
+        
+        sortedItems.forEach(([id, item]) => {
+            const date = new Date(item.date).toLocaleDateString('pt-BR');
+            const time = new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            statsHtml += `
+                <div class="list-group-item d-flex justify-content-between align-items-center" style="cursor: pointer; border: none; border-bottom: 1px solid #eee; padding: 1rem; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'" onclick="navigateToFavoriteItem('${id}', '${item.name.replace(/'/g, "\\'")}')" title="Clique para ir para este favorito">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-star-fill me-3" style="font-size: 1.2rem; color: #6c757d;"></i>
+                        <span class="fw-medium">${item.name}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <small class="text-muted me-3">${date} às ${time}</small>
+                        <i class="bi bi-arrow-right" style="color: #6c757d;"></i>
+                    </div>
+                </div>
+            `;
+        });
+        
+        statsHtml += `
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-outline-danger" onclick="clearAllFavorites()" style="border-radius: 25px; padding: 0.5rem 1.5rem;">
+                                <i class="bi bi-trash me-2"></i>Limpar Todos os Favoritos
+                            </button>
+                        </div>
+        `;
+    } else {
+        statsHtml += `
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-star" style="font-size: 4rem; color: #6c757d; opacity: 0.5;"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">Nenhum favorito ainda</h5>
+                            <p class="text-muted mb-4">Clique no ícone <i class="bi bi-star" style="color: #6c757d;"></i> ao lado dos itens para marcá-los como favoritos!</p>
+                            <div class="alert alert-light" style="border-radius: 10px; border: 1px solid #dee2e6; background: #f8f9fa;">
+                                <i class="bi bi-lightbulb me-2" style="color: #6c757d;"></i>
+                                <strong>Dica:</strong> Os favoritos ajudam você a acessar rapidamente seus materiais mais importantes!
+                            </div>
+                        </div>
+        `;
+    }
+    
+    statsHtml += `
+                    </div>
+                    <div class="modal-footer" style="border: none; border-radius: 0 0 15px 15px; padding: 1.5rem; background: #f8f9fa;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 25px; padding: 0.5rem 1.5rem;">
+                            <i class="bi bi-x-circle me-2"></i>Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('favoritesModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', statsHtml);
+    
+    const modal = new bootstrap.Modal(document.getElementById('favoritesModal'));
+    modal.show();
+}
+
+function clearAllFavorites() {
+    const modalHtml = `
+        <div class="modal fade" id="clearFavoritesModal" tabindex="-1" aria-labelledby="clearFavoritesModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="clearFavoritesModalLabel">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Limpeza
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-trash text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <p class="text-center mb-0">Tem certeza que deseja limpar <strong>todos</strong> os favoritos?</p>
+                        <p class="text-center text-muted mt-2">Esta ação não pode ser desfeita.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmClearAllFavorites()">
+                            <i class="bi bi-trash me-1"></i>Limpar Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('clearFavoritesModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('clearFavoritesModal'));
+    modal.show();
+}
+
+function confirmClearAllFavorites() {
+    localStorage.removeItem('favoriteItems');
+    
+    // Close the confirmation modal
+    const clearModal = bootstrap.Modal.getInstance(document.getElementById('clearFavoritesModal'));
+    clearModal.hide();
+    
+    // Show success message
+    setTimeout(() => {
+        showFavorites(); // Refresh the favorites modal
+        // Refresh the current page to update icons
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }, 300);
+}
+
+function clearAllStudied() {
+    const modalHtml = `
+        <div class="modal fade" id="clearStudiedModal" tabindex="-1" aria-labelledby="clearStudiedModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="clearStudiedModalLabel">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Limpeza
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-trash text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <p class="text-center mb-0">Tem certeza que deseja limpar <strong>todos</strong> os materiais marcados como estudados?</p>
+                        <p class="text-center text-muted mt-2">Esta ação não pode ser desfeita.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmClearAllStudied()">
+                            <i class="bi bi-trash me-1"></i>Limpar Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('clearStudiedModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('clearStudiedModal'));
+    modal.show();
+}
+
+function confirmClearAllStudied() {
+    localStorage.removeItem('studiedItems');
+    
+    // Close the confirmation modal
+    const clearModal = bootstrap.Modal.getInstance(document.getElementById('clearStudiedModal'));
+    clearModal.hide();
+    
+    // Show success message
+    setTimeout(() => {
+        showStudiedStats(); // Refresh the stats modal
+        // Refresh the current page to update icons
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }, 300);
+}
+
+function findItemPath(itemId) {
+    const studiedItems = getStudiedItems();
+    const item = studiedItems[itemId];
+    
+    if (item && item.path) {
+        // Use the stored path where the item was marked as studied
+        return item.path;
+    }
+    
+    // Fallback: try to find the item in the current page
+    const currentItems = window.currentItems || [];
+    
+    // Search in current items
+    for (let currentItem of currentItems) {
+        if (currentItem.id === itemId) {
+            // Build path from current location
+            const currentPath = window.location.pathname;
+            return currentPath + (currentPath.endsWith('/') ? '' : '/') + encodeURIComponent(currentItem.name);
+        }
+    }
+    
+    // If not found, return root
+    return '/';
+}
+
+function navigateToStudiedItem(itemId, itemName) {
+    const path = findItemPath(itemId);
+    if (path && path !== '/') {
+        window.location.href = path;
+    } else {
+        // If we can't find the exact path, show a modal and navigate to root
+        const modalHtml = `
+            <div class="modal fade" id="navigateModal" tabindex="-1" aria-labelledby="navigateModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title" id="navigateModalLabel">
+                                <i class="bi bi-info-circle me-2"></i>Navegando
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-folder text-info" style="font-size: 3rem;"></i>
+                            </div>
+                            <p class="text-center mb-0">Navegando para a raiz. Procure por <strong>"${itemName}"</strong> na lista.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="window.location.href = '/'">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('navigateModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('navigateModal'));
+        modal.show();
+    }
+}
+
+function navigateToFavoriteItem(itemId, itemName) {
+    const favoriteItems = getFavoriteItems();
+    const item = favoriteItems[itemId];
+    
+    if (item && item.path) {
+        // Use the stored path where the item was marked as favorite
+        window.location.href = item.path;
+    } else {
+        // If we can't find the exact path, show a modal and navigate to root
+        const modalHtml = `
+            <div class="modal fade" id="navigateFavoriteModal" tabindex="-1" aria-labelledby="navigateFavoriteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="navigateFavoriteModalLabel">
+                                <i class="bi bi-star-fill me-2"></i>Navegando para Favorito
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-star text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <p class="text-center mb-0">Navegando para a raiz. Procure por <strong>"${itemName}"</strong> na lista.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-warning" onclick="window.location.href = '/'">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('navigateFavoriteModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('navigateFavoriteModal'));
+        modal.show();
+    }
 }
 
 // Show error modal
