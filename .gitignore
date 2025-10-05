@@ -1,0 +1,7 @@
+node_modules
+.env
+.wrangler/
+package-lock.json
+package.json
+worker.js
+wrangler.toml
