@@ -1729,6 +1729,9 @@ function startDownload(fileName, fileUrl, fileSize) {
 
 // Global variable to track download cancellation
 let currentDownloadController = null;
+// Global variable to track bulk download cancellation
+let currentBulkDownloadController = null;
+let isBulkDownloadCancelled = false;
 
 // Real download function with progress tracking and cancellation support
 async function downloadWithProgress(url, filename, progressCallback) {
@@ -1873,6 +1876,48 @@ function cancelDownload() {
     }
 }
 
+// Cancel bulk download function
+function cancelBulkDownload() {
+    // Set cancellation flag
+    isBulkDownloadCancelled = true;
+    
+    // Abort current download if any
+    if (currentBulkDownloadController) {
+        currentBulkDownloadController.abort();
+        currentBulkDownloadController = null;
+    }
+    
+    // Update UI to show cancellation
+    const statusElement = document.getElementById('bulkDownloadStatus');
+    const progressElement = document.getElementById('bulkDownloadProgress');
+    const startBtn = document.getElementById('startBulkDownloadBtn');
+    const cancelBtn = document.getElementById('cancelBulkDownloadBtn');
+    const closeBtn = document.getElementById('closeBulkDownloadModal');
+    
+    if (statusElement) {
+        statusElement.textContent = 'Cancelando download...';
+    }
+    
+    if (progressElement) {
+        progressElement.classList.remove('progress-bar-animated');
+        progressElement.classList.add('bg-warning');
+    }
+    
+    // Restore buttons
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Iniciar Downloads';
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.classList.add('d-none');
+    }
+    
+    if (closeBtn) {
+        closeBtn.classList.remove('d-none');
+    }
+}
+
 // Bulk download function with modal
 function initiateBulkDownload(links) {
     if (links.length === 0) {
@@ -1986,7 +2031,10 @@ function showBulkDownloadModal(filesWithNames) {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeBulkDownloadModal">Fechar</button>
+                    <button type="button" class="btn btn-danger d-none" id="cancelBulkDownloadBtn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar Download
+                    </button>
                     <button type="button" class="btn btn-primary" id="startBulkDownloadBtn">
                         <i class="bi bi-download me-1"></i>Iniciar Downloads
                     </button>
@@ -2013,6 +2061,14 @@ function showBulkDownloadModal(filesWithNames) {
     document.getElementById('startBulkDownloadBtn').addEventListener('click', () => {
         startBulkDownload(filesWithNames);
     });
+    
+    // Add event listener for cancel button
+    document.getElementById('cancelBulkDownloadBtn').addEventListener('click', () => {
+        cancelBulkDownload();
+    });
+    
+    // Reset cancellation flag when modal is shown
+    isBulkDownloadCancelled = false;
 }
 
 // Studied materials management
@@ -2712,135 +2768,218 @@ async function startBulkDownload(filesWithNames) {
     const speedElement = document.getElementById('bulkDownloadSpeed');
     const statusElement = document.getElementById('bulkDownloadStatus');
     const startBtn = document.getElementById('startBulkDownloadBtn');
+    const cancelBtn = document.getElementById('cancelBulkDownloadBtn');
+    const closeBtn = document.getElementById('closeBulkDownloadModal');
     
+    // Reset cancellation flag
+    isBulkDownloadCancelled = false;
+    
+    // Update UI: hide start button, show cancel button
     startBtn.disabled = true;
     startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Baixando...';
+    cancelBtn.classList.remove('d-none');
+    closeBtn.classList.add('d-none');
     
     const totalFiles = filesWithNames.length;
     let completedFiles = 0;
     let totalDownloaded = 0;
     let startTime = Date.now();
     
-    for (let i = 0; i < filesWithNames.length; i++) {
-        const file = filesWithNames[i];
-        const link = file.link;
-        const fileName = file.name;
-        
-        // Update current file status
-        currentFileElement.textContent = `${i + 1}/${totalFiles}`;
-        statusElement.textContent = `Baixando: ${fileName}`;
-        
-        // Update file status in list
-        const fileStatusElement = document.getElementById(`file-status-${i}`);
-        if (fileStatusElement) {
-            fileStatusElement.textContent = 'Baixando';
-            fileStatusElement.className = 'badge bg-warning';
-        }
-        
-        try {
-            // Download single file with progress tracking
-            await downloadSingleFileWithProgress(link, fileName, (progress, loaded, total, speed) => {
-                // Update progress for current file
-                const fileProgress = (i / totalFiles) * 100 + (progress / totalFiles);
-                progressElement.style.width = fileProgress + '%';
-                progressPercentElement.textContent = Math.round(fileProgress) + '%';
+    try {
+        for (let i = 0; i < filesWithNames.length; i++) {
+            // Check if download was cancelled
+            if (isBulkDownloadCancelled) {
+                break;
+            }
+            
+            const file = filesWithNames[i];
+            const link = file.link;
+            const fileName = file.name;
+            
+            // Update current file status
+            currentFileElement.textContent = `${i + 1}/${totalFiles}`;
+            statusElement.textContent = `Baixando: ${fileName}`;
+            
+            // Update file status in list
+            const fileStatusElement = document.getElementById(`file-status-${i}`);
+            if (fileStatusElement) {
+                fileStatusElement.textContent = 'Baixando';
+                fileStatusElement.className = 'badge bg-warning';
+            }
+            
+            try {
+                // Download single file with progress tracking
+                await downloadSingleFileWithProgress(link, fileName, (progress, loaded, total, speed) => {
+                    // Check if download was cancelled during progress update
+                    if (isBulkDownloadCancelled) {
+                        return;
+                    }
+                    
+                    // Update progress for current file
+                    const fileProgress = (i / totalFiles) * 100 + (progress / totalFiles);
+                    progressElement.style.width = fileProgress + '%';
+                    progressPercentElement.textContent = Math.round(fileProgress) + '%';
+                    
+                    if (speed > 0) {
+                        speedElement.textContent = formatSpeed(speed);
+                    }
+                    
+                    totalDownloaded = loaded;
+                });
                 
-                if (speed > 0) {
-                    speedElement.textContent = formatSpeed(speed);
+                // Check if download was cancelled after file download
+                if (isBulkDownloadCancelled) {
+                    if (fileStatusElement) {
+                        fileStatusElement.textContent = 'Cancelado';
+                        fileStatusElement.className = 'badge bg-secondary';
+                    }
+                    break;
                 }
                 
-                totalDownloaded = loaded;
-            });
-            
-            completedFiles++;
-            
-            // Update file status to completed
-            if (fileStatusElement) {
-                fileStatusElement.textContent = 'Concluído';
-                fileStatusElement.className = 'badge bg-success';
-            }
-            
-        } catch (error) {
-            console.error('Erro ao baixar arquivo:', fileName, error);
-            
-            // Update file status to error
-            if (fileStatusElement) {
-                fileStatusElement.textContent = 'Erro';
-                fileStatusElement.className = 'badge bg-danger';
+                completedFiles++;
+                
+                // Update file status to completed
+                if (fileStatusElement) {
+                    fileStatusElement.textContent = 'Concluído';
+                    fileStatusElement.className = 'badge bg-success';
+                }
+                
+            } catch (error) {
+                if (error.message === 'Download cancelled by user' || isBulkDownloadCancelled) {
+                    // Update file status to cancelled
+                    if (fileStatusElement) {
+                        fileStatusElement.textContent = 'Cancelado';
+                        fileStatusElement.className = 'badge bg-secondary';
+                    }
+                    break;
+                }
+                
+                console.error('Erro ao baixar arquivo:', fileName, error);
+                
+                // Update file status to error
+                if (fileStatusElement) {
+                    fileStatusElement.textContent = 'Erro';
+                    fileStatusElement.className = 'badge bg-danger';
+                }
             }
         }
+    } catch (error) {
+        console.error('Erro no download em massa:', error);
     }
     
     // Final update
-    progressElement.style.width = '100%';
-    progressPercentElement.textContent = '100%';
-    statusElement.textContent = `Download concluído! ${completedFiles}/${totalFiles} arquivos baixados com sucesso.`;
-    progressElement.classList.remove('progress-bar-animated');
-    progressElement.classList.add('bg-success');
+    if (isBulkDownloadCancelled) {
+        statusElement.textContent = `Download cancelado! ${completedFiles}/${totalFiles} arquivos baixados antes do cancelamento.`;
+        progressElement.classList.remove('progress-bar-animated');
+        progressElement.classList.add('bg-warning');
+    } else {
+        progressElement.style.width = '100%';
+        progressPercentElement.textContent = '100%';
+        statusElement.textContent = `Download concluído! ${completedFiles}/${totalFiles} arquivos baixados com sucesso.`;
+        progressElement.classList.remove('progress-bar-animated');
+        progressElement.classList.add('bg-success');
+    }
     
-    // Close modal after 3 seconds
-    setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkDownloadModal'));
-        modal.hide();
-    }, 3000);
+    // Restore UI buttons
+    startBtn.disabled = false;
+    startBtn.innerHTML = '<i class="bi bi-download me-1"></i>Iniciar Downloads';
+    cancelBtn.classList.add('d-none');
+    closeBtn.classList.remove('d-none');
+    
+    // Close modal after 3 seconds if not cancelled
+    if (!isBulkDownloadCancelled) {
+        setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('bulkDownloadModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }, 3000);
+    }
 }
 
 // Download single file with progress tracking
 async function downloadSingleFileWithProgress(url, filename, progressCallback) {
-    const response = await fetch(url);
+    // Create AbortController for cancellation
+    const controller = new AbortController();
+    currentBulkDownloadController = controller;
     
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const contentLength = response.headers.get('content-length');
-    const total = parseInt(contentLength, 10);
-    let loaded = 0;
-    let lastTime = Date.now();
-    let lastLoaded = 0;
-    
-    const reader = response.body.getReader();
-    const chunks = [];
-    
-    while (true) {
-        const { done, value } = await reader.read();
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal
+        });
         
-        if (done) break;
-        
-        chunks.push(value);
-        loaded += value.length;
-        
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastTime;
-        
-        // Calculate speed and progress every 200ms
-        if (timeDiff >= 200) {
-            const speed = ((loaded - lastLoaded) / timeDiff) * 1000; // bytes per second
-            const progress = total ? (loaded / total) * 100 : 0;
-            
-            progressCallback(progress, loaded, total, speed);
-            
-            lastTime = currentTime;
-            lastLoaded = loaded;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const contentLength = response.headers.get('content-length');
+        const total = parseInt(contentLength, 10);
+        let loaded = 0;
+        let lastTime = Date.now();
+        let lastLoaded = 0;
+        
+        const reader = response.body.getReader();
+        const chunks = [];
+        
+        while (true) {
+            // Check if download was cancelled
+            if (controller.signal.aborted || isBulkDownloadCancelled) {
+                reader.cancel();
+                throw new Error('Download cancelled by user');
+            }
+            
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+            
+            chunks.push(value);
+            loaded += value.length;
+            
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastTime;
+            
+            // Calculate speed and progress every 200ms
+            if (timeDiff >= 200) {
+                const speed = ((loaded - lastLoaded) / timeDiff) * 1000; // bytes per second
+                const progress = total ? (loaded / total) * 100 : 0;
+                
+                progressCallback(progress, loaded, total, speed);
+                
+                lastTime = currentTime;
+                lastLoaded = loaded;
+            }
+        }
+        
+        // Check if download was cancelled before creating blob
+        if (controller.signal.aborted || isBulkDownloadCancelled) {
+            throw new Error('Download cancelled by user');
+        }
+        
+        // Create blob and download
+        const blob = new Blob(chunks);
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        // Final progress update
+        progressCallback(100, loaded, total, 0);
+        
+    } catch (error) {
+        if (error.name === 'AbortError' || error.message === 'Download cancelled by user') {
+            throw new Error('Download cancelled by user');
+        }
+        throw error;
+    } finally {
+        currentBulkDownloadController = null;
     }
-    
-    // Create blob and download
-    const blob = new Blob(chunks);
-    const downloadUrl = window.URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Clean up
-    window.URL.revokeObjectURL(downloadUrl);
-    
-    // Final progress update
-    progressCallback(100, loaded, total, 0);
 }
 
 // Função para copiar link para clipboard
