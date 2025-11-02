@@ -237,8 +237,13 @@ function list(e, t="", n=!1) {
         password: c
     }, p, null));
     document.getElementById("handle-multiple-items-copy").addEventListener("click", (() => {
-        const e = document.querySelectorAll('input[type="checkbox"]:checked')
-          , t = [];
+        const allChecked = document.querySelectorAll('input[type="checkbox"]:checked');
+        // Filtrar o checkbox "Selecionar todos" e apenas checkboxes com value válido
+        const e = Array.from(allChecked).filter(checkbox => {
+            return checkbox.id !== 'select-all-checkboxes' && checkbox.value && checkbox.value.trim() !== '';
+        });
+        
+        const t = [];
         if (0 === e.length)
             return void showErrorModal("Nenhum Item Selecionado", "Por favor, selecione pelo menos um item para baixar.");
         
@@ -414,11 +419,34 @@ function applySortingAndFilter(currentPath, sortBy, sortOrder, searchTerm = '') 
     const allItems = [];
     listElement.find('.countitems, .size_items').each(function() {
         const item = $(this);
-        const isFolder = item.hasClass('countitems');
-        const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+        const isFolder = !item.hasClass('size_items'); // Pastas têm .countitems mas não .size_items
+        const isFile = item.hasClass('size_items');
+        
+        // Extrair nome corretamente, removendo elementos filhos
+        let name = item.clone().children().remove().end().text().trim();
+        // Se não conseguir, tenta pegar o texto completo e limpar
+        if (!name || name === '') {
+            name = item.text().trim();
+        }
+        // Remover emojis e espaços extras
+        name = name.replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+        // Remover badges de data (podem estar no final)
+        name = name.replace(/\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}/g, '').trim();
+        name = name.replace(/\s+/g, ' ').trim();
+        
+        // Para arquivos, o elemento DOM a mover é o div pai, não o <a>
+        let elementToMove = item[0];
+        if (isFile) {
+            const parentDiv = item.closest('.list-group-item');
+            if (parentDiv.length) {
+                elementToMove = parentDiv[0];
+            }
+        }
         
         // Extrair data do badge se existir
-        const badge = item.find('.badge');
+        // Para arquivos, procurar no div pai
+        const container = isFile ? item.closest('.list-group-item') : item;
+        const badge = container.find('.badge');
         let modifiedTime = new Date().toISOString();
         if (badge.length) {
             const dateText = badge.text().trim();
@@ -443,7 +471,8 @@ function applySortingAndFilter(currentPath, sortBy, sortOrder, searchTerm = '') 
         }
         
         // Extrair tamanho se for arquivo
-        const sizeText = item.find('.float-end').text().trim();
+        // Para arquivos, procurar no div pai
+        const sizeText = container.find('.badge.bg-primary').text().trim();
         const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
         
         allItems.push({
@@ -451,7 +480,7 @@ function applySortingAndFilter(currentPath, sortBy, sortOrder, searchTerm = '') 
             modifiedTime: modifiedTime,
             size: size,
             mimeType: isFolder ? 'application/vnd.google-apps.folder' : 'file',
-            element: item[0] // Manter referência ao elemento DOM
+            element: elementToMove // Manter referência ao elemento DOM correto
         });
     });
     
@@ -506,11 +535,43 @@ function applyDynamicFilter(searchTerm = '') {
     const allItems = [];
     listElement.find('.countitems, .size_items').each(function() {
         const item = $(this);
-        const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+        let name = '';
+        let elementToHide = null;
+        
+        // Se é arquivo (.size_items), o elemento está dentro de um div
+        if (item.hasClass('size_items')) {
+            // Extrair o nome diretamente do texto do elemento <a>
+            // O nome está no conteúdo direto do elemento, sem filhos
+            name = item.clone().children().remove().end().text().trim();
+            // Se não conseguir, tenta pegar o texto completo e limpar
+            if (!name || name === '') {
+                name = item.text().trim();
+            }
+            // Remover emojis e espaços extras (caso algum tenha sido capturado)
+            name = name.replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            // O elemento a esconder/mostrar é o div pai (para manter toda a estrutura)
+            elementToHide = item.closest('.list-group-item')[0] || item[0];
+        } else {
+            // Se é pasta (.countitems), o elemento já é o próprio link
+            // Extrair nome, removendo ícones e badges
+            name = item.clone().children().remove().end().text().trim();
+            // Se não conseguir, tenta pegar o texto completo e limpar
+            if (!name || name === '') {
+                name = item.text().trim();
+            }
+            // Remover emojis e espaços extras
+            name = name.replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            // Remover badges de data (podem estar no final)
+            name = name.replace(/\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}/g, '').trim();
+            // Remover qualquer badge ou span restante
+            name = name.replace(/\s+/g, ' ').trim();
+            elementToHide = item[0];
+        }
         
         allItems.push({
             name: name,
-            element: item[0]
+            element: elementToHide || item[0],
+            isFile: item.hasClass('size_items')
         });
     });
     
@@ -548,16 +609,28 @@ function applySorting(sortBy, sortOrder) {
         // Primeiro, coletar todos os elementos DOM visíveis
         listElement.find('.countitems:visible, .size_items:visible').each(function() {
             const item = $(this);
-            const isFolder = item.hasClass('countitems');
-            const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            const isFolder = !item.hasClass('size_items');
+            const isFile = item.hasClass('size_items');
+            
+            // Extrair nome corretamente, removendo elementos filhos
+            let name = item.clone().children().remove().end().text().trim();
+            // Se não conseguir, tenta pegar o texto completo e limpar
+            if (!name || name === '') {
+                name = item.text().trim();
+            }
+            // Remover emojis e espaços extras
+            name = name.replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            // Remover badges de data (podem estar no final)
+            name = name.replace(/\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}/g, '').trim();
+            name = name.replace(/\s+/g, ' ').trim();
             
             // Determinar o elemento correto para mover
             let elementToMove = item[0];
-            if (item.hasClass('size_items')) {
+            if (isFile) {
                 // Para arquivos, mover o div pai que contém toda a estrutura
-                const parentDiv = item.closest('.list-group-item')[0];
-                if (parentDiv) {
-                    elementToMove = parentDiv;
+                const parentDiv = item.closest('.list-group-item');
+                if (parentDiv.length) {
+                    elementToMove = parentDiv[0];
                 }
             }
             
@@ -578,7 +651,9 @@ function applySorting(sortBy, sortOrder) {
                 allItems.push(itemData);
             } else {
                 // Fallback: extrair do DOM se não encontrar dados originais
-                const badge = item.find('.badge');
+                // Para arquivos, procurar badges no div pai
+                const container = isFile ? item.closest('.list-group-item') : item;
+                const badge = container.find('.badge.bg-info');
                 let modifiedTime = new Date().toISOString();
                 if (badge.length) {
                     const dateText = badge.text().trim();
@@ -593,7 +668,8 @@ function applySorting(sortBy, sortOrder) {
                     }
                 }
                 
-                const sizeText = item.find('.float-end').text().trim();
+                // Para arquivos, procurar tamanho no badge correto do div pai
+                const sizeText = container.find('.badge.bg-primary').text().trim();
                 const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
                 
                 const fallbackData = {
@@ -622,20 +698,34 @@ function applySorting(sortBy, sortOrder) {
         const allItems = [];
         listElement.find('.countitems:visible, .size_items:visible').each(function() {
             const item = $(this);
-            const isFolder = item.hasClass('countitems');
-            const name = item.text().trim().replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            const isFolder = !item.hasClass('size_items');
+            const isFile = item.hasClass('size_items');
+            
+            // Extrair nome corretamente, removendo elementos filhos
+            let name = item.clone().children().remove().end().text().trim();
+            // Se não conseguir, tenta pegar o texto completo e limpar
+            if (!name || name === '') {
+                name = item.text().trim();
+            }
+            // Remover emojis e espaços extras
+            name = name.replace(/📁\s*/, '').replace(/📄\s*/, '').replace(/📊\s*/, '').replace(/🎵\s*/, '').replace(/🎬\s*/, '').replace(/🖼️\s*/, '').replace(/📋\s*/, '').replace(/📦\s*/, '').replace(/📝\s*/, '').replace(/📄\s*/, '');
+            // Remover badges de data (podem estar no final)
+            name = name.replace(/\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}/g, '').trim();
+            name = name.replace(/\s+/g, ' ').trim();
             
             // Determinar o elemento correto para mover
             let elementToMove = item[0];
-            if (item.hasClass('size_items')) {
+            if (isFile) {
                 // Para arquivos, mover o div pai que contém toda a estrutura
-                const parentDiv = item.closest('.list-group-item')[0];
-                if (parentDiv) {
-                    elementToMove = parentDiv;
+                const parentDiv = item.closest('.list-group-item');
+                if (parentDiv.length) {
+                    elementToMove = parentDiv[0];
                 }
             }
             
-            const badge = item.find('.badge');
+            // Para arquivos, procurar badges no div pai
+            const container = isFile ? item.closest('.list-group-item') : item;
+            const badge = container.find('.badge.bg-info');
             let modifiedTime = new Date().toISOString();
             if (badge.length) {
                 const dateText = badge.text().trim();
@@ -650,7 +740,8 @@ function applySorting(sortBy, sortOrder) {
                 }
             }
             
-            const sizeText = item.find('.float-end').text().trim();
+            // Para arquivos, procurar tamanho no badge correto do div pai
+            const sizeText = container.find('.badge.bg-primary').text().trim();
             const size = sizeText ? parseInt(sizeText.replace(/[^\d]/g, '')) || 0 : 0;
             
             allItems.push({
@@ -1224,8 +1315,13 @@ function render_search_result_list() {
     }
     ));
     document.getElementById("handle-multiple-items-copy").addEventListener("click", (() => {
-        const e = document.querySelectorAll('input[type="checkbox"]:checked')
-          , t = [];
+        const allChecked = document.querySelectorAll('input[type="checkbox"]:checked');
+        // Filtrar o checkbox "Selecionar todos" e apenas checkboxes com value válido
+        const e = Array.from(allChecked).filter(checkbox => {
+            return checkbox.id !== 'select-all-checkboxes' && checkbox.value && checkbox.value.trim() !== '';
+        });
+        
+        const t = [];
         if (0 === e.length)
             return void showErrorModal("Nenhum Item Selecionado", "Por favor, selecione pelo menos um item para baixar.");
         
@@ -1784,10 +1880,40 @@ function initiateBulkDownload(links) {
         return;
     }
     
+    // Filtrar links vazios ou inválidos
+    const validLinks = links.filter(link => link && link.trim() !== '' && link.trim() !== 'on');
+    
+    if (validLinks.length === 0) {
+        showErrorModal("Nenhum Item Válido", "Nenhum arquivo válido foi selecionado.");
+        return;
+    }
+    
     // Create array with both links and file names
-    const filesWithNames = links.map(link => {
-        const checkbox = document.querySelector(`input[value="${link}"]`);
+    const filesWithNames = validLinks.map(link => {
+        // Usar CSS.escape para escapar caracteres especiais no seletor
+        const escapedLink = CSS.escape(link);
+        const checkbox = document.querySelector(`input[type="checkbox"][value="${escapedLink}"]`);
         const fileName = checkbox ? checkbox.getAttribute('data-name') : 'Arquivo Desconhecido';
+        
+        // Se ainda não encontrou nome, tentar extrair da URL
+        if (fileName === 'Arquivo Desconhecido' && link) {
+            try {
+                const urlParts = link.split('/').filter(p => p);
+                if (urlParts.length > 0) {
+                    const lastPart = urlParts[urlParts.length - 1];
+                    const decodedName = decodeURIComponent(lastPart.split('?')[0]);
+                    if (decodedName && decodedName !== 'on') {
+                        return {
+                            link: link,
+                            name: decodedName
+                        };
+                    }
+                }
+            } catch (e) {
+                // Ignorar erro
+            }
+        }
+        
         return {
             link: link,
             name: fileName
@@ -4614,11 +4740,13 @@ function outFunc() {
     document.getElementById("myTooltip").innerHTML = "Copiar"
 }
 function updateCheckboxes() {
-    const e = document.querySelectorAll('input[type="checkbox"]')
-      , t = document.getElementById("select-all-checkboxes");
+    const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+    // Filtrar checkboxes excluindo o "select-all-checkboxes"
+    const e = Array.from(allCheckboxes).filter(checkbox => checkbox.id !== 'select-all-checkboxes');
+    const t = document.getElementById("select-all-checkboxes");
     e.length > 0 && t && t.addEventListener("click", (()=>{
-        e.forEach((e=>{
-            e.checked = t.checked
+        e.forEach((checkbox=>{
+            checkbox.checked = t.checked
         }
         ))
     }
