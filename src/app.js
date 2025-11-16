@@ -1,6 +1,6 @@
 function init() {
     document.siteName = $("title").html();
-    var e = `<header>\n   <div id="nav">\n   </div>\n</header>\n<div class="loading" id="spinner" style="display:none;">Loading&#8230;</div>\n<div>\n<div id="content" style="padding-top: ${UI.header_padding}px;${UI.fixed_footer ? " padding-bottom: clamp(170px, 100%, 300px);" : ""}">\n</div>\n<div class="modal fade" id="SearchModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="SearchModelLabel" aria-hidden="true">\n  <div class="modal-dialog" role="document">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title" id="SearchModelLabel"></h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">\n          <span aria-hidden="true"></span>\n        </button>\n      </div>\n      <div class="modal-body" id="modal-body-space">\n      </div>\n      <div class="modal-footer" id="modal-body-space-buttons">\n      </div>\n    </div>\n  </div>\n</div>\n<br>\n<footer class="footer mt-auto py-3 text-muted ${UI.footer_style_class}" style="${UI.fixed_footer ? "position: fixed; " : ""}left: 0; bottom: 0; width: 100%; color: white; z-index: 9999;${UI.hide_footer ? " display:none;" : " display:block;"}"> <div class="container" style="width: auto; padding: 0 10px;"> <p class="float-end"> <a href="#">Back to top</a> </p> ${UI.credit ? '<p>Redesigned with <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-heart-fill" fill="red" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" /> </svg> by <a href="https://www.npmjs.com/package/@googledrive/index" target="_blank">TheFirstSpeedster</a>, based on Open Source Softwares.</p>' : ""} <p>© ${UI.copyright_year} - <a href=" ${UI.company_link}" target="_blank"> ${UI.company_name}</a>, All Rights Reserved.</p> </div> </footer>\n  `;
+    var e = `<header>\n   <div id="nav">\n   </div>\n</header>\n<div class="loading" id="spinner" style="display:none;">Loading&#8230;</div>\n<div>\n<div id="content" style="padding-top: ${UI.header_padding}px;${UI.fixed_footer ? " padding-bottom: clamp(170px, 100%, 300px);" : ""}">\n</div>\n<div class="modal fade" id="SearchModel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="SearchModelLabel" aria-hidden="true">\n  <div class="modal-dialog" role="document">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title" id="SearchModelLabel"></h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">\n          <span aria-hidden="true"></span>\n        </button>\n      </div>\n      <div class="modal-body" id="modal-body-space">\n      </div>\n      <div class="modal-footer" id="modal-body-space-buttons">\n      </div>\n    </div>\n  </div>\n</div>\n<div class="modal fade" id="VideoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="VideoModalLabel" aria-hidden="true">\n  <div class="modal-dialog modal-xl modal-fullscreen-lg-down" role="document" id="VideoModalDialog">\n    <div class="modal-content" style="background-color: #000;">\n      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.2);">\n        <h5 class="modal-title text-white" id="VideoModalLabel"></h5>\n        <div class="d-flex gap-2 align-items-center">\n          <button type="button" class="btn btn-sm btn-outline-primary" id="downloadVideoModalBtn" onclick="downloadVideoFromModal()" title="Baixar vídeo" style="line-height: 1; padding: 0.25rem 0.5rem; display: none;">\n            <i class="bi bi-download"></i>\n          </button>\n          <button type="button" class="btn btn-sm btn-outline-light" id="toggleFullscreenVideoModal" onclick="toggleVideoModalFullscreen()" title="Expandir/Reduzir" style="line-height: 1; padding: 0.25rem 0.5rem;">\n            <i class="bi bi-arrows-fullscreen" id="fullscreenIconVideoModal"></i>\n          </button>\n          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeVideoModal()" style="margin: 0;">\n          </button>\n        </div>\n      </div>\n      <div class="modal-body p-0" id="video-modal-body" style="background-color: #000;">\n        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">\n          <div class="spinner-border text-light" role="status">\n            <span class="visually-hidden">Carregando...</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n<br>\n<footer class="footer mt-auto py-3 text-muted ${UI.footer_style_class}" style="${UI.fixed_footer ? "position: fixed; " : ""}left: 0; bottom: 0; width: 100%; color: white; z-index: 9999;${UI.hide_footer ? " display:none;" : " display:block;"}"> <div class="container" style="width: auto; padding: 0 10px;"> <p class="float-end"> <a href="#">Back to top</a> </p> ${UI.credit ? '<p>Redesigned with <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-heart-fill" fill="red" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" /> </svg> by <a href="https://www.npmjs.com/package/@googledrive/index" target="_blank">TheFirstSpeedster</a>, based on Open Source Softwares.</p>' : ""} <p>© ${UI.copyright_year} - <a href=" ${UI.company_link}" target="_blank"> ${UI.company_name}</a>, All Rights Reserved.</p> </div> </footer>\n  `;
     $("body").html(e)
 }
 const folder_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet"><g clip-path="url(#__lottie_element_11)"><g transform="matrix(1,0,0,1,0,0)" opacity="1" style="display: block;"><g opacity="1" transform="matrix(1,0,0,1,24,24)"><path fill="rgb(255,159,0)" fill-opacity="1" d=" M16,-12 C16,-12 -2,-12 -2,-12 C-2,-12 -6,-16 -6,-16 C-6,-16 -16,-16 -16,-16 C-18.200000762939453,-16 -20,-14.199999809265137 -20,-12 C-20,-12 -20,12 -20,12 C-20,14.208999633789062 -18.208999633789062,16 -16,16 C-16,16 13.682000160217285,16 13.682000160217285,16 C13.682000160217285,16 20,5 20,5 C20,5 20,-8 20,-8 C20,-10.199999809265137 18.200000762939453,-12 16,-12z"></path></g></g><g transform="matrix(1,0,0,1,0,0)" opacity="1" style="display: block;"><g opacity="1" transform="matrix(1,0,0,1,24,26)"><path fill="rgb(255,201,40)" fill-opacity="1" d=" M16,-14 C16,-14 -16,-14 -16,-14 C-18.200000762939453,-14 -20,-12.199999809265137 -20,-10 C-20,-10 -20,10 -20,10 C-20,12.199999809265137 -18.200000762939453,14 -16,14 C-16,14 16,14 16,14 C18.200000762939453,14 20,12.199999809265137 20,10 C20,10 20,-10 20,-10 C20,-12.199999809265137 18.200000762939453,-14 16,-14z"></path></g></g></g></svg>'
@@ -296,7 +296,14 @@ function append_files_to_fallback_list(e, t) {
                 " view",
                 html += '<div class="list-group-item list-group-item-action">' + (UI.allow_selecting_files ? '<input class="form-check-input" style="margin-top: 0.3em;margin-right: 0.5em;" type="checkbox" value="' + p + '" id="flexCheckDefault">' : ""),
                 "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|".indexOf(`|${m}|`) >= 0 ? html += video_icon : "|html|php|css|go|java|js|json|txt|sh|".indexOf(`|${m}|`) >= 0 ? html += code_icon : "|zip|rar|tar|.7z|.gz|".indexOf(`|${m}|`) >= 0 ? html += zip_icon : "|bmp|jpg|jpeg|png|gif|".indexOf(`|${m}|`) >= 0 ? html += image_icon : "|m4a|mp3|flac|wav|ogg|".indexOf(`|${m}|`) >= 0 ? html += audio_icon : "|md|".indexOf(`|${m}|`) >= 0 ? html += markdown_icon : "|pdf|".indexOf(`|${m}|`) >= 0 ? html += pdf_icon : html += file_icon,
-                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${d}&a=view">${s.name}</a>${UI.display_download ? `<a href="#" onclick="initiateDownload('${s.name}', '${p}', '${s.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + s.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + s.modifiedTime + " </span>" : ""}</div>`
+                (function() {
+                    const videoExts = "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|";
+                    const isVideo = videoExts.indexOf(`|${m}|`) >= 0;
+                    const isFile = !isVideo; // Todos os outros arquivos também abrem no modal
+                    const fileClickHandler = isVideo ? `onclick="event.preventDefault(); openVideoModal('${d}?a=view'); return false;"` : 
+                                             isFile ? `onclick="event.preventDefault(); openFileModal('${d}?a=view'); return false;"` : '';
+                    html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${d}&a=view" ${fileClickHandler}>${s.name}</a>${UI.display_download ? `<a href="#" onclick="initiateDownload('${s.name}', '${p}', '${s.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end"> ' + s.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end"> ' + s.modifiedTime + " </span>" : ""}</div>`;
+                })()
             }
         }
         if (r && UI.allow_selecting_files && (document.getElementById("select_items").style.display = "block"),
@@ -1240,7 +1247,14 @@ function append_files_to_list(e, t) {
                 const fileFavoriteStatus = isFavorite(d.id) ? 'bi-star-fill text-warning' : 'bi-star text-muted';
                 const fileFavoriteTitle = isFavorite(d.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
                 
-                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}">${d.name}</a><i class="favorite-icon ${fileFavoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${fileFavoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement, '${g}');"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement, '${g}');"></i>${UI.display_download ? `<a href="#" onclick="initiateDownload('${d.name}', '${m}', '${d.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end me-2"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end me-2"> ' + d.modifiedTime + " </span>" : ""}</div>`;
+                // Verificar tipo de arquivo para abrir no modal
+                const videoExts = "|mp4|webm|avi|mpg|mpeg|mkv|rm|rmvb|mov|wmv|asf|ts|flv|";
+                const isVideo = videoExts.indexOf(`|${f}|`) >= 0;
+                const isFile = !isVideo; // Todos os outros arquivos também abrem no modal
+                const fileClickHandler = isVideo ? `onclick="event.preventDefault(); openVideoModal('${g}'); return false;"` : 
+                                         isFile ? `onclick="event.preventDefault(); openFileModal('${g}'); return false;"` : '';
+                
+                html += ` <a class="countitems size_items list-group-item-action" style="text-decoration: none; color: ${UI.css_a_tag_color};" href="${g}" ${fileClickHandler}>${d.name}</a><i class="favorite-icon ${fileFavoriteStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${fileFavoriteTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleFavoriteStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement, '${g}');"></i><i class="studied-icon ${studiedStatus} float-end me-3" style="cursor: pointer; font-size: 1.1rem; width: 1.1rem; height: 1.1rem; display: inline-flex; align-items: center; justify-content: center;" title="${studiedTitle}" onclick="event.preventDefault(); event.stopPropagation(); toggleStudiedStatus('${d.id}', '${d.name.replace(/'/g, "\\'")}', this.parentElement, '${g}');"></i>${UI.display_download ? `<a href="#" onclick="initiateDownload('${d.name}', '${m}', '${d.size}'); return false;"><svg class="float-end"width="25px" style="margin-left: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"></path> <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path> </svg></a>` : ""}${UI.display_size ? '<span class="badge bg-primary float-end me-2"> ' + d.size + " </span>" : ""}${UI.display_time ? ' <span class="badge bg-info float-end me-2"> ' + d.modifiedTime + " </span>" : ""}</div>`;
             })()
         }
     }
@@ -3545,6 +3559,760 @@ function file_video_old(e, t, n, a, i, o, l, r) {
     y.href = player_css,
     y.rel = "stylesheet",
     document.head.appendChild(y)
+}
+
+// Função para alternar fullscreen do modal de vídeo
+function toggleVideoModalFullscreen() {
+    const modal = document.getElementById('VideoModal');
+    const dialog = document.getElementById('VideoModalDialog');
+    const icon = document.getElementById('fullscreenIconVideoModal');
+    
+    if (!modal || !dialog) return;
+    
+    if (dialog.classList.contains('modal-fullscreen')) {
+        // Sair do fullscreen
+        dialog.classList.remove('modal-fullscreen');
+        icon.classList.remove('bi-fullscreen-exit');
+        icon.classList.add('bi-arrows-fullscreen');
+    } else {
+        // Entrar em fullscreen
+        dialog.classList.add('modal-fullscreen');
+        icon.classList.remove('bi-arrows-fullscreen');
+        icon.classList.add('bi-fullscreen-exit');
+    }
+}
+
+// Função para fechar o modal de vídeo e limpar o player
+function closeVideoModal() {
+    const modal = document.getElementById('VideoModal');
+    if (modal) {
+        // Parar todos os players antes de fechar
+        if (window.videoPlayerInstance) {
+            try {
+                if (window.videoPlayerInstance.pause) window.videoPlayerInstance.pause();
+                if (window.videoPlayerInstance.destroy) window.videoPlayerInstance.destroy();
+                if (window.videoPlayerInstance.dispose) window.videoPlayerInstance.dispose();
+            } catch (e) {
+                console.log('Erro ao limpar player:', e);
+            }
+            window.videoPlayerInstance = null;
+        }
+        // Limpar o conteúdo do modal
+        const modalBody = document.getElementById('video-modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 400px;"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+        }
+        // Esconder botão de baixar
+        const downloadBtn = document.getElementById('downloadVideoModalBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = 'none';
+            downloadBtn.removeAttribute('data-file-name');
+            downloadBtn.removeAttribute('data-file-url');
+            downloadBtn.removeAttribute('data-file-size');
+        }
+    }
+}
+
+function downloadVideoFromModal() {
+    const btn = document.getElementById('downloadVideoModalBtn');
+    if (btn && btn.dataset.fileUrl) {
+        const fileName = btn.dataset.fileName || 'video';
+        const fileUrl = btn.dataset.fileUrl;
+        const fileSize = btn.dataset.fileSize || '';
+        initiateDownload(fileName, fileUrl, fileSize);
+    }
+}
+
+// Adicionar event listener para limpar o player quando o modal for fechado
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoModal = document.getElementById('VideoModal');
+        if (videoModal) {
+            videoModal.addEventListener('hidden.bs.modal', function() {
+                closeVideoModal();
+            });
+        }
+    });
+}
+
+// Função para abrir o modal de vídeo
+async function openVideoModal(videoPath) {
+    const modal = new bootstrap.Modal(document.getElementById('VideoModal'));
+    const modalLabel = document.getElementById('VideoModalLabel');
+    const modalBody = document.getElementById('video-modal-body');
+    
+    // Mostrar loading
+    modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 400px;"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+    modalLabel.textContent = 'Carregando vídeo...';
+    modal.show();
+    
+    try {
+        // Remover ?a=view do caminho se existir
+        const cleanPath = videoPath.replace('?a=view', '');
+        
+        // Obter informações do arquivo usando o mesmo método que file()
+        const response = await fetch(cleanPath, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                path: cleanPath
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error("Falha ao carregar vídeo");
+        }
+        
+        const fileData = await response.json();
+        const rootId = await getCookie("root_id") || "";
+        
+        const fileName = fileData.name;
+        const fileSize = formatFileSize(fileData.size);
+        const videoUrl = UI.second_domain_for_dl ? UI.downloaddomain + fileData.link : 
+                        (fileData.link.startsWith('http') ? fileData.link : window.location.origin + fileData.link);
+        const thumbnail = fileData.thumbnailLink ? fileData.thumbnailLink.replace("s220", "s0") : UI.poster;
+        const mimeType = fileData.mimeType;
+        const fileId = fileData.id;
+        
+        // Chamar a função para renderizar o vídeo no modal
+        file_video_modal(fileName, encodeURIComponent(fileName), fileSize, thumbnail, videoUrl, mimeType, fileId, rootId);
+        
+    } catch (error) {
+        modalBody.innerHTML = `<div class="alert alert-danger m-3">Erro ao carregar o vídeo: ${error.message}</div>`;
+        modalLabel.textContent = 'Erro';
+    }
+}
+
+// Função para renderizar o vídeo no modal (versão adaptada de file_video)
+function file_video_modal(e, t, n, a, i, o, l, r) {
+    var s = btoa(i);
+    const c = UI.allow_file_copy ? generateCopyFileBox(l, r) : "";
+    
+    let v;
+    let player_js = "";
+    let player_css = "";
+    
+    UI.disable_player || ("plyr" == player_config.player ? (v = `<video id="player-modal" playsinline controls data-poster="${a}">
+      <source src="${i}" type="video/mp4" />
+      <source src="${i}" type="video/webm" />
+        </video>`,
+    player_js = "/plyr.polyfilled.js",
+    player_css = "https://cdn.plyr.io/" + player_config.plyr_io_version + "/plyr.css") : "videojs" == player_config.player ? (v = `<video id="vplayer-modal" poster="${a}" muted=true class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%" data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.5, 2]}' style="--plyr-captions-text-color: #ffffff;--plyr-captions-background: #000000;">
+      <source src="${i}" type="video/mp4" />
+      <source src="${i}" type="video/webm" />
+      <source src="${i}" type="video/avi" />
+    </video>`,
+    player_js = "https://vjs.zencdn.net/" + player_config.videojs_version + "/video.js",
+    player_css = "https://vjs.zencdn.net/" + player_config.videojs_version + "/video-js.css") : "dplayer" == player_config.player ? (v = '<div id="player-container-modal"></div>',
+    player_js = "https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js",
+    player_css = "https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css") : "jwplayer" == player_config.player && (v = '<div id="player-modal"></div>',
+    player_js = "https://content.jwplatform.com/libraries/IDzF9Zmk.js",
+    player_css = ""));
+    
+    var u = `
+      <div class="video-wrapper" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background: #000;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+          ${v}
+        </div>
+      </div>
+    `;
+    
+    const modalLabel = document.getElementById('VideoModalLabel');
+    const modalBody = document.getElementById('video-modal-body');
+    const downloadBtn = document.getElementById('downloadVideoModalBtn');
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', i);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    modalBody.innerHTML = u;
+    
+    // Carregar scripts do player
+    if (player_js && !UI.disable_player) {
+        var h = document.createElement("script");
+        h.src = player_js;
+        h.onload = function() {
+            if ("plyr" == player_config.player) {
+                const player = new Plyr("#player-modal", {
+                    controls: [
+                        'play-large',
+                        'restart',
+                        'rewind',
+                        'play',
+                        'fast-forward',
+                        'progress',
+                        'current-time',
+                        'duration',
+                        'mute',
+                        'volume',
+                        'settings',
+                        'fullscreen'
+                    ],
+                    settings: ['quality', 'speed'],
+                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] }
+                });
+                window.videoPlayerInstance = player;
+            } else if ("videojs" == player_config.player) {
+                const player = new videojs("vplayer-modal", {
+                    playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+                    fluid: true,
+                    responsive: true,
+                    controls: true,
+                    preload: 'auto'
+                });
+                window.videoPlayerInstance = player;
+            } else if ("dplayer" == player_config.player) {
+                const dp = new DPlayer({
+                    container: document.getElementById("player-container-modal"),
+                    screenshot: true,
+                    video: {
+                        url: i,
+                        pic: a,
+                        thumbnails: a
+                    }
+                });
+                window.videoPlayerInstance = dp;
+            } else if ("jwplayer" == player_config.player) {
+                jwplayer("player-modal").setup({
+                    file: i,
+                    type: o,
+                    autostart: false,
+                    image: a,
+                    width: "100%",
+                    aspectratio: "16:9",
+                    title: e
+                });
+                window.videoPlayerInstance = jwplayer("player-modal");
+            }
+        };
+        document.head.appendChild(h);
+    }
+    
+    if (player_css && !UI.disable_player) {
+        var y = document.createElement("link");
+        y.href = player_css;
+        y.rel = "stylesheet";
+        document.head.appendChild(y);
+    }
+}
+
+// Criar modal de arquivo dinamicamente se não existir
+function ensureFileModal() {
+    if (!document.getElementById('FileModal')) {
+        const modalHTML = `
+<div class="modal fade" id="FileModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="FileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-lg-down" role="document" id="FileModalDialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="FileModalLabel"></h5>
+        <div class="d-flex gap-2 align-items-center">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="downloadFileModalBtn" onclick="downloadFileFromModal()" title="Baixar arquivo" style="line-height: 1; padding: 0.25rem 0.5rem; display: none;">
+            <i class="bi bi-download"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleFullscreenFileModal" onclick="toggleFileModalFullscreen()" title="Expandir/Reduzir" style="line-height: 1; padding: 0.25rem 0.5rem;">
+            <i class="bi bi-arrows-fullscreen" id="fullscreenIconFileModal"></i>
+          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeFileModal()" style="margin: 0;">
+          </button>
+        </div>
+      </div>
+      <div class="modal-body p-0" id="file-modal-body">
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Carregando...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+}
+
+// Função para alternar fullscreen do modal de arquivo
+function toggleFileModalFullscreen() {
+    const modal = document.getElementById('FileModal');
+    const dialog = document.getElementById('FileModalDialog');
+    const icon = document.getElementById('fullscreenIconFileModal');
+    
+    if (!modal || !dialog) return;
+    
+    if (dialog.classList.contains('modal-fullscreen')) {
+        // Sair do fullscreen
+        dialog.classList.remove('modal-fullscreen');
+        icon.classList.remove('bi-fullscreen-exit');
+        icon.classList.add('bi-arrows-fullscreen');
+    } else {
+        // Entrar em fullscreen
+        dialog.classList.add('modal-fullscreen');
+        icon.classList.remove('bi-arrows-fullscreen');
+        icon.classList.add('bi-fullscreen-exit');
+    }
+}
+
+// Função para fechar o modal de arquivo genérico
+function closeFileModal() {
+    const modal = document.getElementById('FileModal');
+    if (modal) {
+        // Limpar o conteúdo do modal
+        const modalBody = document.getElementById('file-modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 400px;"><div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+        }
+        // Esconder botão de baixar
+        const downloadBtn = document.getElementById('downloadFileModalBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = 'none';
+            downloadBtn.removeAttribute('data-file-name');
+            downloadBtn.removeAttribute('data-file-url');
+            downloadBtn.removeAttribute('data-file-size');
+        }
+    }
+}
+
+function downloadFileFromModal() {
+    const btn = document.getElementById('downloadFileModalBtn');
+    if (btn && btn.dataset.fileUrl) {
+        const fileName = btn.dataset.fileName || 'arquivo';
+        const fileUrl = btn.dataset.fileUrl;
+        const fileSize = btn.dataset.fileSize || '';
+        initiateDownload(fileName, fileUrl, fileSize);
+    }
+}
+
+// Função genérica para abrir qualquer arquivo no modal
+async function openFileModal(filePath) {
+    ensureFileModal(); // Garantir que o modal existe
+    const modal = new bootstrap.Modal(document.getElementById('FileModal'));
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    
+    // Mostrar loading
+    modalBody.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 400px;"><div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+    modalLabel.textContent = 'Carregando arquivo...';
+    modal.show();
+    
+    try {
+        // Remover ?a=view do caminho se existir
+        const cleanPath = filePath.replace('?a=view', '');
+        
+        // Obter informações do arquivo
+        const response = await fetch(cleanPath, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                path: cleanPath
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error("Falha ao carregar arquivo");
+        }
+        
+        const fileData = await response.json();
+        const rootId = await getCookie("root_id") || "";
+        
+        const fileName = fileData.name;
+        const fileSize = formatFileSize(fileData.size);
+        const fileUrl = UI.second_domain_for_dl ? UI.downloaddomain + fileData.link : 
+                        (fileData.link.startsWith('http') ? fileData.link : window.location.origin + fileData.link);
+        const mimeType = fileData.mimeType;
+        const fileExtension = fileData.fileExtension;
+        const fileId = fileData.id;
+        const thumbnail = fileData.thumbnailLink ? fileData.thumbnailLink.replace("s220", "s0") : UI.poster;
+        
+        // Determinar tipo de arquivo e chamar função apropriada
+        const videoExts = ["mp4", "webm", "avi", "mpg", "mpeg", "mkv", "rm", "rmvb", "mov", "wmv", "asf", "ts", "flv", "3gp", "m4v"];
+        const audioExts = ["mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "alac"];
+        const imageExts = ["bmp", "jpg", "jpeg", "png", "gif", "svg", "tiff", "ico"];
+        const codeExts = ["php", "css", "go", "java", "js", "json", "txt", "sh", "md", "html", "xml", "py", "rb", "c", "cpp", "h", "hpp"];
+        
+        if (mimeType.includes("video") || videoExts.includes(fileExtension)) {
+            // Vídeos já têm seu próprio modal
+            modal.hide();
+            openVideoModal(filePath);
+        } else if (mimeType.includes("audio") || audioExts.includes(fileExtension)) {
+            file_audio_modal(fileName, encodeURIComponent(fileName), fileSize, fileUrl, fileId, rootId);
+        } else if (mimeType.includes("image") || imageExts.includes(fileExtension)) {
+            file_image_modal(fileName, encodeURIComponent(fileName), fileSize, fileUrl, fileId, rootId);
+        } else if (mimeType.includes("pdf") || fileExtension === "pdf") {
+            file_pdf_modal(fileName, encodeURIComponent(fileName), fileSize, fileUrl, fileId, rootId);
+        } else if (codeExts.includes(fileExtension)) {
+            file_code_modal(fileName, encodeURIComponent(fileName), fileSize, fileUrl, fileId, rootId);
+        } else {
+            file_others_modal(fileName, encodeURIComponent(fileName), fileSize, fileUrl, fileId, rootId);
+        }
+        
+    } catch (error) {
+        modalBody.innerHTML = `<div class="alert alert-danger m-3">Erro ao carregar o arquivo: ${error.message}</div>`;
+        modalLabel.textContent = 'Erro';
+    }
+}
+
+// Adicionar event listener para limpar o modal quando fechado
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', function() {
+        ensureFileModal(); // Garantir que o modal existe
+        const fileModal = document.getElementById('FileModal');
+        if (fileModal) {
+            fileModal.addEventListener('hidden.bs.modal', function() {
+                closeFileModal();
+            });
+        }
+    });
+}
+
+// Funções _modal para renderizar cada tipo de arquivo no modal
+function file_pdf_modal(e, t, n, a, i, o) {
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    const downloadBtn = document.getElementById('downloadFileModalBtn');
+    
+    // Detectar se é mobile
+    const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', a);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    modalBody.innerHTML = `
+      <div class="card">
+        <div class="card-body p-0" style="height: ${isMobile ? '85vh' : '80vh'}; background: #525252; position: relative;">
+          <div id="pdf-viewer-container" style="width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; position: relative; -webkit-overflow-scrolling: touch;">
+            <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+              <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Carregando PDF...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Carregar PDF.js
+    if (typeof pdfjsLib === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = function() {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            renderPDF(a, isMobile);
+        };
+        document.head.appendChild(script);
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css';
+        document.head.appendChild(link);
+    } else {
+        renderPDF(a, isMobile);
+    }
+    
+    function renderPDF(url, isMobile) {
+        const container = document.getElementById('pdf-viewer-container');
+        if (!container) return;
+        
+        container.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 100%;"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Carregando PDF...</span></div></div>';
+        
+        // Carregar o PDF
+        pdfjsLib.getDocument(url).promise.then(function(pdf) {
+            container.innerHTML = '';
+            
+            // Variável para controlar o zoom (acessível em todo o escopo)
+            let currentScale = isMobile ? 1.2 : 1.5;
+            const minScale = 0.5;
+            const maxScale = 3.0;
+            const scaleStep = 0.2;
+            
+            // Adicionar controles de zoom para mobile
+            if (isMobile) {
+                const controlsDiv = document.createElement('div');
+                controlsDiv.style.cssText = 'position: sticky; top: 0; z-index: 10; background: #525252; padding: 12px 10px; display: flex; justify-content: center; gap: 15px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1);';
+                
+                const zoomOutBtn = document.createElement('button');
+                zoomOutBtn.className = 'btn btn-outline-light';
+                zoomOutBtn.style.cssText = 'min-width: 44px; min-height: 44px; padding: 8px 12px; font-size: 18px;';
+                zoomOutBtn.innerHTML = '<i class="bi bi-zoom-out"></i>';
+                zoomOutBtn.title = 'Diminuir zoom';
+                
+                const zoomInfo = document.createElement('span');
+                zoomInfo.style.cssText = 'color: #fff; font-size: 15px; min-width: 70px; text-align: center; font-weight: 500;';
+                zoomInfo.textContent = Math.round(currentScale * 100) + '%';
+                
+                const zoomInBtn = document.createElement('button');
+                zoomInBtn.className = 'btn btn-outline-light';
+                zoomInBtn.style.cssText = 'min-width: 44px; min-height: 44px; padding: 8px 12px; font-size: 18px;';
+                zoomInBtn.innerHTML = '<i class="bi bi-zoom-in"></i>';
+                zoomInBtn.title = 'Aumentar zoom';
+                
+                controlsDiv.appendChild(zoomOutBtn);
+                controlsDiv.appendChild(zoomInfo);
+                controlsDiv.appendChild(zoomInBtn);
+                container.appendChild(controlsDiv);
+                
+                function updateZoom(newScale) {
+                    if (newScale < minScale || newScale > maxScale) return;
+                    currentScale = newScale;
+                    zoomInfo.textContent = Math.round(currentScale * 100) + '%';
+                    
+                    // Re-renderizar todas as páginas com novo zoom
+                    container.querySelectorAll('.pdf-page-container').forEach(function(pageDiv) {
+                        const canvas = pageDiv.querySelector('canvas');
+                        const pageNum = parseInt(pageDiv.dataset.pageNum);
+                        pdf.getPage(pageNum).then(function(page) {
+                            const viewport = page.getViewport({ scale: currentScale });
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            
+                            const context = canvas.getContext('2d');
+                            const renderContext = {
+                                canvasContext: context,
+                                viewport: viewport
+                            };
+                            page.render(renderContext);
+                        });
+                    });
+                }
+                
+                zoomOutBtn.onclick = function() { updateZoom(currentScale - scaleStep); };
+                zoomInBtn.onclick = function() { updateZoom(currentScale + scaleStep); };
+            }
+            
+            // Criar canvas para cada página
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                pdf.getPage(pageNum).then(function(page) {
+                    const scale = currentScale;
+                    const viewport = page.getViewport({ scale: scale });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.style.display = 'block';
+                    canvas.style.margin = '0 auto';
+                    canvas.style.marginBottom = isMobile ? '15px' : '10px';
+                    canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.height = 'auto';
+                    
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'pdf-page-container';
+                    pageDiv.dataset.pageNum = pageNum;
+                    pageDiv.style.textAlign = 'center';
+                    pageDiv.style.marginBottom = isMobile ? '25px' : '20px';
+                    pageDiv.style.padding = isMobile ? '15px 5px' : '10px';
+                    pageDiv.style.backgroundColor = '#525252';
+                    
+                    const pageLabel = document.createElement('div');
+                    pageLabel.textContent = `Página ${pageNum} de ${pdf.numPages}`;
+                    pageLabel.style.color = '#fff';
+                    pageLabel.style.marginBottom = isMobile ? '12px' : '10px';
+                    pageLabel.style.fontSize = isMobile ? '12px' : '14px';
+                    pageLabel.style.fontWeight = '500';
+                    
+                    pageDiv.appendChild(pageLabel);
+                    pageDiv.appendChild(canvas);
+                    container.appendChild(pageDiv);
+                    
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    
+                    page.render(renderContext);
+                });
+            }
+        }).catch(function(error) {
+            console.error('Erro ao carregar PDF:', error);
+            container.innerHTML = `
+              <div class="alert alert-danger m-3">
+                <h5>Erro ao carregar PDF</h5>
+                <p>Não foi possível carregar o PDF para visualização.</p>
+                <p><small>${error.message}</small></p>
+                <div class="mt-3">
+                  <a href="${url}" target="_blank" class="btn btn-primary me-2">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir em nova aba
+                  </a>
+                  <a href="${url}" download class="btn btn-secondary">
+                    <i class="bi bi-download me-1"></i>Baixar PDF
+                  </a>
+                </div>
+              </div>
+            `;
+        });
+    }
+}
+
+function file_image_modal(e, t, n, a, i, o) {
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    const downloadBtn = document.getElementById('downloadFileModalBtn');
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', a);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    const content = `
+      <div class="card">
+        <div class="card-body p-3" style="background: #f8f9fa; text-align: center; min-height: 60vh; display: flex; align-items: center; justify-content: center;">
+          <img src="${a}" class="img-fluid" style="max-height: 75vh; max-width: 100%;" alt="${e}">
+        </div>
+      </div>
+    `;
+    modalBody.innerHTML = content;
+}
+
+function file_audio_modal(e, t, n, a, i, o) {
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    const downloadBtn = document.getElementById('downloadFileModalBtn');
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', a);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    const content = `
+      <div class="card">
+        <div class="card-body p-5" style="background: #f8f9fa; min-height: 60vh; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 100%; max-width: 600px;">
+            <audio id="audio-player-modal" controls style="width: 100%;">
+              <source src="${a}" type="audio/mpeg">
+              <source src="${a}" type="audio/ogg">
+              <source src="${a}" type="audio/wav">
+              Seu navegador não suporta o elemento de áudio.
+            </audio>
+          </div>
+        </div>
+      </div>
+    `;
+    modalBody.innerHTML = content;
+}
+
+function file_code_modal(e, t, n, a, i, o) {
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    const downloadBtn = document.getElementById('downloadFileModalBtn');
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', a);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    // Carregar o conteúdo do arquivo
+    $.get(a, function(data) {
+        const ext = e.split('.').pop().toLowerCase();
+        const langMap = {
+            "html": "html", "php": "php", "css": "css", "go": "golang",
+            "java": "java", "js": "javascript", "json": "json", "txt": "text",
+            "sh": "bash", "md": "markdown", "xml": "xml", "py": "python",
+            "rb": "ruby", "c": "c", "cpp": "cpp", "h": "c", "hpp": "cpp"
+        };
+        const lang = langMap[ext] || "text";
+        // Verificar se está em modo escuro
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
+                          document.body.classList.contains('dark') ||
+                          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Usar tema claro ou escuro baseado no modo
+        const theme = isDarkMode ? 'prism-twilight' : 'prism';
+        const content = `
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/${theme}.min.css">
+          <style>
+            pre[class*="language-"] {
+              margin: 0;
+              background: ${isDarkMode ? '#2d2d2d' : '#f5f2f0'} !important;
+            }
+            code[class*="language-"] {
+              color: ${isDarkMode ? '#f8f8f2' : '#333'} !important;
+            }
+            .card-body pre {
+              background: ${isDarkMode ? '#2d2d2d' : '#f5f2f0'} !important;
+            }
+            .card-body code {
+              color: ${isDarkMode ? '#f8f8f2' : '#333'} !important;
+            }
+          </style>
+          <div class="card">
+            <div class="card-body p-0" style="max-height: 75vh; overflow: auto; background: ${isDarkMode ? '#2d2d2d' : '#f5f2f0'};">
+              <pre style="margin: 0; padding: 1rem; background: ${isDarkMode ? '#2d2d2d' : '#f5f2f0'} !important;"><code class="language-${lang}" style="color: ${isDarkMode ? '#f8f8f2' : '#333'} !important;">${$('<div>').text(data).html()}</code></pre>
+            </div>
+          </div>
+          <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/components/prism-core.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
+        `;
+        modalBody.innerHTML = content;
+    });
+}
+
+function file_others_modal(e, t, n, a, i, o) {
+    const modalLabel = document.getElementById('FileModalLabel');
+    const modalBody = document.getElementById('file-modal-body');
+    const downloadBtn = document.getElementById('downloadFileModalBtn');
+    
+    const ext = e.split('.').pop().toLowerCase();
+    let icon = 'bi-file-earmark';
+    let type = 'Arquivo';
+    
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+        icon = 'bi-file-earmark-zip';
+        type = 'Arquivo Compactado';
+    } else if (['doc', 'docx'].includes(ext)) {
+        icon = 'bi-file-earmark-word';
+        type = 'Documento Word';
+    } else if (['xls', 'xlsx'].includes(ext)) {
+        icon = 'bi-file-earmark-excel';
+        type = 'Planilha Excel';
+    } else if (['ppt', 'pptx'].includes(ext)) {
+        icon = 'bi-file-earmark-ppt';
+        type = 'Apresentação PowerPoint';
+    }
+    
+    // Atualizar label e botão de baixar
+    modalLabel.textContent = e;
+    if (downloadBtn) {
+        downloadBtn.style.display = 'block';
+        downloadBtn.setAttribute('data-file-name', e);
+        downloadBtn.setAttribute('data-file-url', a);
+        downloadBtn.setAttribute('data-file-size', n);
+    }
+    
+    const content = `
+      <div class="card">
+        <div class="card-body p-5" style="min-height: 60vh; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+          <i class="bi ${icon}" style="font-size: 5rem; color: #6c757d; margin-bottom: 1rem;"></i>
+          <p class="text-muted">Este tipo de arquivo não pode ser visualizado no navegador.</p>
+          <p class="text-muted">Por favor, baixe o arquivo para visualizá-lo.</p>
+        </div>
+      </div>
+    `;
+    modalBody.innerHTML = content;
 }
 
 function file_video(e, t, n, a, i, o, l, r) {
