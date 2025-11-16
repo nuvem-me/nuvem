@@ -5557,6 +5557,11 @@ function renderReadmeFile(fileId, fileName, mimeType) {
     // Verificar se é um arquivo README.md
     const isReadme = fileName.toLowerCase().includes('readme');
     
+    // Verificar se é um arquivo HTML
+    const isHtmlFile = fileName.toLowerCase().endsWith('.html') || 
+                       fileName.toLowerCase().endsWith('.htm') ||
+                       (mimeType && mimeType.includes('html'));
+    
     // Verificar se é um arquivo de texto (baseado em extensões comuns e MIME type)
     const textExtensions = ['.txt', '.md', '.json', '.xml', '.csv', '.log', '.ini', '.cfg', '.conf', '.yaml', '.yml', '.toml', '.env', '.gitignore', '.htaccess', '.htpasswd'];
     const isTextFile = textExtensions.some(ext => fileName.toLowerCase().endsWith(ext)) || 
@@ -5565,7 +5570,7 @@ function renderReadmeFile(fileId, fileName, mimeType) {
                       (mimeType && mimeType.includes('xml'));
     
     // Verificar se deve renderizar baseado no tipo de arquivo e configuração
-    if ((isReadme && !renderReadme) || (isTextFile && !renderTxt) || (!isReadme && !isTextFile)) {
+    if ((isReadme && !renderReadme) || ((isTextFile || isHtmlFile) && !renderTxt) || (!isReadme && !isTextFile && !isHtmlFile)) {
         return null;
     }
     
@@ -5584,6 +5589,44 @@ function renderReadmeFile(fileId, fileName, mimeType) {
             if (isReadme) {
                 // README.md sempre como markdown
                 renderedContent = marked.parse(content);
+            } else if (isHtmlFile) {
+                // Arquivos HTML: renderizar em iframe isolado para evitar que CSS afete a página
+                const uniqueId = `html-preview-${fileId}`.replace(/[^a-zA-Z0-9]/g, '-');
+                const blob = new Blob([content], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                renderedContent = `
+                    <iframe 
+                        id="${uniqueId}"
+                        src="${url}" 
+                        style="width: 100%; border: 1px solid #dee2e6; border-radius: 4px; min-height: 400px; max-height: 600px; overflow: auto; background: white;"
+                        sandbox="allow-same-origin allow-scripts"
+                        loading="lazy">
+                    </iframe>
+                `;
+                
+                // Ajustar altura do iframe após carregar
+                setTimeout(function() {
+                    try {
+                        const iframe = document.getElementById(uniqueId);
+                        if (iframe) {
+                            iframe.onload = function() {
+                                try {
+                                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                                    if (doc && doc.body) {
+                                        const height = Math.max(400, doc.body.scrollHeight + 20);
+                                        iframe.style.height = height + 'px';
+                                    }
+                                } catch(e) {
+                                    // Cross-origin ou outro erro, manter altura padrão
+                                    console.log('Não foi possível ajustar altura do iframe (pode ser restrição de segurança):', e);
+                                }
+                            };
+                        }
+                    } catch(e) {
+                        console.log('Erro ao configurar iframe:', e);
+                    }
+                }, 100);
             } else if (isTextFile) {
                 // Arquivos de texto: verificar se é markdown ou texto simples
                 const isMarkdownFile = fileName.toLowerCase().endsWith('.md');
@@ -5605,7 +5648,7 @@ function renderReadmeFile(fileId, fileName, mimeType) {
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div class="readme-content" style="max-height: 400px; overflow-y: auto; line-height: 1.6;">
+                            <div class="readme-content" style="max-height: ${isHtmlFile ? '600px' : '400px'}; overflow-y: auto; line-height: 1.6;">
                                 ${renderedContent}
                             </div>
                         </div>
